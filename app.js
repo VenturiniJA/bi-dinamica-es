@@ -150,15 +150,33 @@ function processData(trackRows, clusterRows) {
     return ejs;
 }
 
+function getClusterFromIndice(indice) {
+    if (!indice) return 1;
+    if (indice <= 12000000) return 1;
+    if (indice <= 24000000) return 2;
+    if (indice <= 61000000) return 3;
+    if (indice <= 130000000) return 4;
+    return 5;
+}
+
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
-    let acCount = 0;
+    let saldoEvolucao = 0;
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
-        if (ej.previsao.situacao === "SOBE") acCount++;
+        let cAtual = parseInt(ej.cluster);
+        let cPrevisto = getClusterFromIndice(ej.previsao.indicePrevisto);
+        if(!isNaN(cAtual) && !isNaN(cPrevisto)) {
+            saldoEvolucao += (cPrevisto - cAtual);
+        }
     });
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
-    document.getElementById("global-ac").textContent = `${acCount} / ${dados.length}`;
+    
+    let saldoEl = document.getElementById("global-ac");
+    saldoEl.textContent = saldoEvolucao > 0 ? `+${saldoEvolucao}` : saldoEvolucao;
+    if(saldoEvolucao > 0) saldoEl.className = "text-2xl font-bold text-status-emerald";
+    else if(saldoEvolucao < 0) saldoEl.className = "text-2xl font-bold text-status-red";
+    else saldoEl.className = "text-2xl font-bold text-slate-900";
 }
 
 const PALETTE = {
@@ -204,6 +222,31 @@ function createMiniCard(ej) {
         </div>
     `;
     return card;
+}
+
+window.updateStrategyFor = function(kpiType) {
+    let ej = allEJs.find(e => e.id === currentSelectedEJId);
+    if(!ej) return;
+    
+    let text = "";
+    if (kpiType === 'faturamento') {
+        text = `💡 <b>FOCO EM FATURAMENTO (${ej.nome}):</b><br><br>A EJ possui uma meta anual de ${moneyFmt(ej.faturamento.metaAno)}. No momento, alcançou ${moneyFmt(ej.faturamento.alcancado)}.<br><br>` + 
+               (ej.faturamento.alcancado >= ej.faturamento.metaAno ? "Meta financeira batida! O foco agora é investir caixa em inovação e reter equipe para entregar a alta demanda com excelência." : "A EJ precisa tracionar urgemente suas vendas. Estratégia Pragmática: Foque em prospecção ativa via Inbound, recupere propostas perdidas (follow-up) e tente realizar upsell em contratos antigos para alavancar rapidamente.");
+    } else if (kpiType === 'csat') {
+        text = `💡 <b>FOCO EM QUALIDADE CSAT (${ej.nome}):</b><br><br>A meta de nota média é ${ej.csat.meta}, e a atual é ${ej.csat.alcancado}.<br><br>` + 
+               (ej.csat.alcancado >= ej.csat.meta ? "Excelente qualidade de entrega. A estratégia aqui é usar os clientes promotores (NPS 9-10) para pedir indicações (Marketing de Indicação) e vender novos serviços (Upsell)." : "Urgente: O índice do Cluster está ameaçado pela baixa qualidade. Reestruture o pós-venda, crie alinhamentos semanais de expectativa com os clientes e pause vendas de projetos excessivamente complexos até sanar a entrega.");
+    } else if (kpiType === 'engajamento') {
+        text = `💡 <b>FOCO EM ENGAJAMENTO DA REDE (${ej.nome}):</b><br><br>A meta de Engajamento MEJ é de ${ej.engajamento.meta}, e o atual está em ${ej.engajamento.alcancado}.<br><br>` + 
+               (ej.engajamento.alcancado >= ej.engajamento.meta ? "Equipe conectada! Membros engajados produzem mais e ficam mais tempo na EJ." : "Estratégia Pragmática: Incentive fortemente a participação dos membros em Eventos da Federação/Núcleo (EDL, ENEJ) e crie benchmarks semanais obrigatórios com outras EJs da rede para inflar o engajamento.");
+    } else if (kpiType === 'tempo') {
+        text = `💡 <b>FOCO EM TEMPO DE PERMANÊNCIA (${ej.nome}):</b><br><br>O tempo médio da equipe deveria ser ${ej.tempo.meta} meses, mas a retenção está em ${ej.tempo.alcancado} meses.<br><br>` + 
+               (ej.tempo.alcancado >= ej.tempo.meta ? "Boa retenção de talentos. A gestão do conhecimento e o engajamento estão funcionando. Foco em criar planos de liderança." : "Alto Turnover: Membros estão saindo rápido. Estratégia Pragmática: Estruture um PDI (Plano de Desenvolvimento Individual) cristalino no momento do Trainee, conecte as metas pessoais ao projeto e evite sobrecarga extrema (Burnout) que destrói a permanência.");
+    }
+
+    // Adiciona botão para voltar à visão geral
+    text += `<br><br><button onclick="document.getElementById('strategy-text').innerHTML = generateAIStrategy(allEJs.find(e => e.id === currentSelectedEJId))" class="text-xs text-es-blue hover:text-es-pink font-bold mt-2">← Voltar para Análise Holística</button>`;
+
+    document.getElementById("strategy-text").innerHTML = text;
 }
 
 function initLeftPanel(dados) {
@@ -417,7 +460,7 @@ function openTacticalProfile(ej) {
     document.getElementById("profile-forecast").textContent = `PREVISÃO: ${ej.previsao.situacao}`;
 
     // AI
-    document.getElementById("profile-ai-text").textContent = generateAIStrategy(ej);
+    document.getElementById('strategy-text').innerHTML = generateAIStrategy(ej);
 
     // Calculadora de Cluster
     const min = ej.previsao.indiceMinimo || 0;
@@ -461,13 +504,105 @@ function openTacticalProfile(ej) {
         calcBarEl.className = "bg-es-blue h-2 rounded-full absolute top-0 left-0 transition-all duration-500";
     }
 
+    // Progresso do Cluster nas barras
+    let distPerc = 0;
+    if (ej.previsao.situacao === 'CAI') {
+        distPerc = ej.previsao.indiceMinimo > 0 ? (ej.previsao.indiceAtual / ej.previsao.indiceMinimo) * 100 : 0;
+    } else {
+        distPerc = ej.previsao.indicePular > 0 ? (ej.previsao.indiceAtual / ej.previsao.indicePular) * 100 : 100;
+    }
+    if (isNaN(distPerc) || !isFinite(distPerc)) distPerc = 0;
+    if (distPerc > 100) distPerc = 100;
+
+    let csatPerc = ej.csat.meta > 0 ? (ej.csat.alcancado / ej.csat.meta) * 100 : 0;
+    if(csatPerc > 100) csatPerc = 100;
+    let engPerc = ej.engajamento.meta > 0 ? (ej.engajamento.alcancado / ej.engajamento.meta) * 100 : 0;
+    if(engPerc > 100) engPerc = 100;
+    let tempPerc = ej.tempo.meta > 0 ? (ej.tempo.alcancado / ej.tempo.meta) * 100 : 0;
+    if(tempPerc > 100) tempPerc = 100;
+
+    document.getElementById("kpi-container").innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('faturamento')">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Faturamento</p>
+                    <span class="text-xs font-bold text-es-blue bg-es-blue/10 px-2 py-0.5 rounded">${distPerc.toFixed(1)}% do Índice</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
+                        <p class="text-sm font-bold text-slate-800">${moneyFmt(ej.faturamento.alcancado)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 mb-1">Meta Anual</p>
+                        <p class="text-sm font-bold text-slate-800">${moneyFmt(ej.faturamento.metaAno)}</p>
+                    </div>
+                </div>
+                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-es-pink" style="width: ${distPerc}%;"></div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('csat')">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">CSAT</p>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.csat.alcancado}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 mb-1">Meta</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.csat.meta}</p>
+                    </div>
+                </div>
+                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-es-pink" style="width: ${csatPerc}%;"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('engajamento')">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Engajamento</p>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.engajamento.alcancado}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 mb-1">Meta</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.engajamento.meta}</p>
+                    </div>
+                </div>
+                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-es-pink" style="width: ${engPerc}%;"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('tempo')">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Tempo Permanência</p>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.tempo.alcancado}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 mb-1">Meta</p>
+                        <p class="text-sm font-bold text-slate-800">${ej.tempo.meta}</p>
+                    </div>
+                </div>
+                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-es-pink" style="width: ${tempPerc}%;"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
     // Diário de Bordo
     const textarea = document.getElementById("meeting-notes");
     textarea.value = localStorage.getItem(`notas_ej_v2_${ej.id}`) || '';
-
-    // Cards
-    fillProgressCard('fat', ej.faturamento.alcancado, ej.faturamento.metaAno, moneyFmt);
-    fillProgressCard('csat', ej.csat.alcancado, ej.csat.meta, (v) => v.toFixed(1));
-    fillProgressCard('eng', ej.engajamento.alcancado, ej.engajamento.meta);
-    fillProgressCard('tempo', ej.tempo.alcancado, ej.tempo.meta);
 }
