@@ -135,15 +135,19 @@ function processData(trackRows, clusterRows) {
         // Cruzamento
         let clusterForecast = clusterMapById[id] || clusterMapByName[nome.toLowerCase()] || { situacao: "PERMANECE" };
 
+        let metaCsatFinal = rawMetaCsat > 0 ? rawMetaCsat : 3.5;
+        let metaEngFinal = safeFloat(row[colMetaEng]) > 0 ? safeFloat(row[colMetaEng]) : 75;
+        let metaTempoFinal = safeFloat(row[colMetaTempo]) > 0 ? safeFloat(row[colMetaTempo]) : 50;
+
         ejs.push({
             id: id,
             nome: nome,
             farol: String(row[colExcelente]).trim().toUpperCase(),
             cluster: safeFloat(row[colCluster]),
             faturamento: { metaAno: cleanMoney(row[colMetaFat]), alcancado: cleanMoney(row[colFatAlcan]) },
-            csat: { meta: rawMetaCsat, alcancado: rawCsat },
-            engajamento: { meta: safeFloat(row[colMetaEng]), alcancado: safeFloat(row[colEng]) },
-            tempo: { meta: safeFloat(row[colMetaTempo]), alcancado: safeFloat(row[colTempo]) },
+            csat: { meta: metaCsatFinal, alcancado: rawCsat },
+            engajamento: { meta: metaEngFinal, alcancado: safeFloat(row[colEng]) },
+            tempo: { meta: metaTempoFinal, alcancado: safeFloat(row[colTempo]) },
             previsao: clusterForecast
         });
     });
@@ -161,16 +165,15 @@ function getClusterFromIndice(indice) {
 
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
-    let saldoEvolucao = 0;
     let countVerde = 0, countAmarelo = 0, countVermelho = 0, countZerada = 0;
+    let countSobe = 0, countCai = 0;
     
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
-        let cAtual = parseInt(ej.cluster);
-        let cPrevisto = getClusterFromIndice(ej.previsao.indicePrevisto);
-        if(!isNaN(cAtual) && !isNaN(cPrevisto)) {
-            saldoEvolucao += (cPrevisto - cAtual);
-        }
+        
+        let sit = ej.previsao.situacao;
+        if(sit === 'SOBE') countSobe++;
+        if(sit === 'CAI') countCai++;
 
         let farol = String(ej.farol).trim().toUpperCase();
         if(farol === "VERDE" || farol === "EXCELENTE") countVerde++;
@@ -179,6 +182,8 @@ function initGlobalKPIs(dados) {
         else countZerada++;
     });
     
+    let saldoEvolucao = countSobe - countCai;
+
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
     
     let saldoEl = document.getElementById("global-ac");
@@ -307,12 +312,34 @@ function initLeftPanel(dados) {
     });
 }
 
+let currentFarolFilter = null;
+window.filterByFarol = function(farolType) {
+    if (currentFarolFilter === farolType) {
+        currentFarolFilter = null; // Remove o filtro
+    } else {
+        currentFarolFilter = farolType;
+    }
+    renderKanban(allEJs); // Atualiza a tabela com os dados filtrados
+};
+
 function renderKanban(dados) {
     const tbody = document.getElementById("dashboard-table-body");
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    const sorted = [...dados].sort((a,b) => {
+    let filteredData = dados;
+    if (currentFarolFilter) {
+        filteredData = dados.filter(ej => {
+            let f = String(ej.farol).trim().toUpperCase();
+            if (currentFarolFilter === 'VERDE') return f === 'VERDE' || f === 'EXCELENTE';
+            if (currentFarolFilter === 'AMARELO') return f === 'AMARELO' || f === 'ATENÇÃO';
+            if (currentFarolFilter === 'VERMELHO') return f === 'VERMELHO' || f === 'ALERTA';
+            if (currentFarolFilter === 'ZERADA') return f === 'ZERADA' || (!f.includes('VERDE') && !f.includes('AMARELO') && !f.includes('VERMELHO') && !f.includes('EXCELENTE') && !f.includes('ATENÇÃO') && !f.includes('ALERTA'));
+            return true;
+        });
+    }
+
+    const sorted = [...filteredData].sort((a,b) => {
         if(a.cluster !== b.cluster) return b.cluster - a.cluster;
         return a.nome.localeCompare(b.nome);
     });
