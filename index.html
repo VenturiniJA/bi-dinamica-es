@@ -174,18 +174,59 @@
                     <div class="w-1/2 p-6 flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar">
                         
                         <!-- AI Card -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 shadow-sm relative overflow-hidden">
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-4 shadow-sm relative overflow-hidden shrink-0">
                             <div class="absolute left-0 top-0 bottom-0 w-1 bg-es-blue"></div>
                             <h4 class="text-xs font-bold text-es-blue uppercase tracking-wider mb-2 flex items-center gap-1">
                                 <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clip-rule="evenodd"></path></svg>
                                 Estratégia de Rede Recomendada
                             </h4>
-                            <p id="profile-ai-text" class="text-sm text-slate-700 leading-relaxed font-medium"></p>
+                            <p id="profile-ai-text" class="text-[13px] text-slate-700 leading-relaxed font-medium"></p>
+                        </div>
+
+                        <!-- Calculadora de Cluster -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm shrink-0">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Longo Prazo (Calculadora de Cluster)</h4>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Define a nota de corte para permanência ou avanço da EJ ao final do ano.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Índice Atual</p>
+                                        <p id="calc-indice-atual" class="text-base font-bold text-slate-700">0</p>
+                                    </div>
+                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-100 relative overflow-hidden">
+                                        <div class="absolute right-0 top-0 bottom-0 w-1 bg-es-blue"></div>
+                                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Índice Previsto (Final Ano)</p>
+                                        <p id="calc-indice-previsto" class="text-lg font-extrabold text-es-blue">0</p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1">
+                                        <span id="calc-label-minimo">Corte Mínimo (Manter)</span>
+                                        <span id="calc-label-alvo">Alvo (Subir Cluster)</span>
+                                    </div>
+                                    <div class="relative w-full bg-slate-200 rounded-full h-2 mb-2">
+                                        <!-- Marcação do Mínimo -->
+                                        <div id="calc-marker-min" class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style="left: 20%;" title="Corte Mínimo"></div>
+                                        <!-- Barra de Progresso Prevista -->
+                                        <div id="calc-bar-previsto" class="bg-es-blue h-2 rounded-full absolute top-0 left-0" style="width: 50%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-[10px] text-slate-400">
+                                        <span id="calc-val-minimo">0</span>
+                                        <span id="calc-val-alvo">0</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Grid de Metas -->
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Progresso de Metas (Tracking)</h4>
-                        <div class="grid grid-cols-2 gap-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 mt-2 shrink-0">Curto Prazo (Metas do Tracking)</h4>
+                        <div class="grid grid-cols-2 gap-4 shrink-0 pb-6">
                             <!-- Faturamento -->
                             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
                                 <div class="flex justify-between items-start mb-4">

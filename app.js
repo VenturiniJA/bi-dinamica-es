@@ -82,7 +82,11 @@ function processData(trackRows, clusterRows) {
         let nomeEJ = String(row['EJ'] || '').trim().toLowerCase();
         let forecast = {
             situacao: String(row['SITUAÇÃO ATUAL'] || '').trim().toUpperCase(),
-            clusterAlmejado: safeFloat(row['CLUSTER ALMEJADO'])
+            clusterAlmejado: safeFloat(row['CLUSTER ALMEJADO']),
+            indiceAtual: cleanMoney(row['ÍNDICE ATUAL']),
+            indicePrevisto: cleanMoney(row['ÍNDICE PREVISTO']),
+            indiceMinimo: cleanMoney(row['ÍNDICE MÍNIMO']),
+            indicePular: cleanMoney(row['ÍNDICE P/ SUBIR'])
         };
         if(id > 0) clusterMapById[id] = forecast;
         if(nomeEJ) clusterMapByName[nomeEJ] = forecast;
@@ -279,23 +283,37 @@ function setupEvents() {
     });
 }
 
+function formatM(val) {
+    if (!val) return '0';
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace('.0', '') + 'M';
+    if (val >= 1000) return (val / 1000).toFixed(1).replace('.0', '') + 'k';
+    return val.toString();
+}
+
 function generateAIStrategy(ej) {
     let insights = [];
     const fatGap = ej.faturamento.metaAno - ej.faturamento.alcancado;
+    const fatPerc = ej.faturamento.metaAno > 0 ? ((ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
+    
+    // Análise de Curto Prazo (Tracking) vs Longo Prazo (Cluster)
+    let hasFatVerde = fatPerc >= 100;
 
     if (ej.previsao.situacao === 'CAI') {
-        insights.push(`🚨 ALERTA: A projeção atual indica que a ${ej.nome} está em RISCO DE QUEDA de Cluster. É obrigatório recuperar o Farol Verde batendo as metas dos KPIs.`);
+        if (hasFatVerde) {
+            insights.push(`🚨 ALERTA DE QUEDA: Embora a ${ej.nome} esteja Verde no Tracking de Faturamento atual (${fatPerc.toFixed(1)}%), a sua projeção de final de ano (Índice Previsto de ${formatM(ej.previsao.indicePrevisto)}) não alcança sequer a nota de corte para se manter no Cluster ${ej.cluster} (Mínimo de ${formatM(ej.previsao.indiceMinimo)}).`);
+            insights.push(`O foco total deve ser alavancar o faturamento além da meta estipulada para salvar o Índice de Cluster.`);
+        } else {
+            insights.push(`🚨 ALERTA: A projeção atual indica que a ${ej.nome} está em RISCO DE QUEDA de Cluster. É obrigatório recuperar o Farol Verde batendo as metas de curto prazo.`);
+            insights.push(`Existe um GAP financeiro de ${moneyFmt(fatGap)} que afunda o Índice Previsto para ${formatM(ej.previsao.indicePrevisto)}.`);
+        }
     } else if (ej.previsao.situacao === 'SOBE') {
-        insights.push(`🚀 EXCELENTE: A projeção aponta que a ${ej.nome} VAI SUBIR para o Cluster ${ej.previsao.clusterAlmejado}! O momento é de tracionar para blindar esse resultado.`);
+        insights.push(`🚀 EXCELENTE: A projeção aponta que a ${ej.nome} VAI SUBIR para o Cluster ${ej.previsao.clusterAlmejado}! O Índice Previsto (${formatM(ej.previsao.indicePrevisto)}) já ultrapassa a meta de salto (${formatM(ej.previsao.indicePular)}). O momento é de tracionar para blindar esse resultado.`);
     } else {
-        insights.push(`Estabilidade: A ${ej.nome} se MANTÉM no Cluster ${ej.cluster}. Para sonhar com o salto, é necessário escalar drasticamente o ticket médio de projetos.`);
-    }
-
-    if (fatGap > 0) {
-        let percent = ej.faturamento.metaAno > 0 ? ((ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
-        insights.push(`Financeiro: Existe um GAP de ${moneyFmt(fatGap)} (${percent.toFixed(1)}% alcançado da meta).`);
-    } else {
-        insights.push(`O Faturamento anual já foi batido. Excelente saúde financeira.`);
+        if (hasFatVerde) {
+            insights.push(`Estabilidade: A ${ej.nome} bateu o Faturamento do mês e se MANTÉM no Cluster ${ej.cluster}. Para sonhar com o salto, é necessário escalar o ticket médio e puxar o Índice de ${formatM(ej.previsao.indicePrevisto)} para o alvo de ${formatM(ej.previsao.indicePular)}.`);
+        } else {
+            insights.push(`Estabilidade em Risco: A ${ej.nome} se MANTÉM no Cluster ${ej.cluster}, porém possui um gap financeiro de ${moneyFmt(fatGap)}. Bater a meta é vital para não correr risco de queda no próximo trimestre.`);
+        }
     }
 
     return insights.join(" ");
@@ -356,6 +374,48 @@ function openTacticalProfile(ej) {
 
     // AI
     document.getElementById("profile-ai-text").textContent = generateAIStrategy(ej);
+
+    // Calculadora de Cluster
+    const min = ej.previsao.indiceMinimo || 0;
+    const alvo = ej.previsao.indicePular || 0;
+    const prev = ej.previsao.indicePrevisto || 0;
+    
+    document.getElementById("calc-indice-atual").textContent = formatM(ej.previsao.indiceAtual || 0);
+    document.getElementById("calc-indice-previsto").textContent = formatM(prev);
+    
+    document.getElementById("calc-val-minimo").textContent = formatM(min);
+    document.getElementById("calc-val-alvo").textContent = formatM(alvo);
+
+    let calcPercent = 0;
+    let minMarkerPercent = 0;
+
+    // Se o alvo for 0 (Cluster 5 já no topo), a barra fica 100%
+    if (alvo <= 0) {
+        calcPercent = 100;
+        minMarkerPercent = 10;
+        document.getElementById("calc-label-alvo").textContent = 'Teto';
+    } else {
+        document.getElementById("calc-label-alvo").textContent = 'Alvo (Subir)';
+        calcPercent = Math.min(100, (prev / alvo) * 100);
+        minMarkerPercent = Math.min(100, (min / alvo) * 100);
+    }
+    
+    document.getElementById("calc-bar-previsto").style.width = `${calcPercent}%`;
+    document.getElementById("calc-marker-min").style.left = `${minMarkerPercent}%`;
+    
+    // Cores da Calculadora
+    const calcPrevEl = document.getElementById("calc-indice-previsto");
+    const calcBarEl = document.getElementById("calc-bar-previsto");
+    if (prev < min) {
+        calcPrevEl.className = "text-lg font-extrabold text-status-red";
+        calcBarEl.className = "bg-status-red h-2 rounded-full absolute top-0 left-0 transition-all duration-500";
+    } else if (prev >= alvo && alvo > 0) {
+        calcPrevEl.className = "text-lg font-extrabold text-status-emerald";
+        calcBarEl.className = "bg-status-emerald h-2 rounded-full absolute top-0 left-0 transition-all duration-500";
+    } else {
+        calcPrevEl.className = "text-lg font-extrabold text-es-blue";
+        calcBarEl.className = "bg-es-blue h-2 rounded-full absolute top-0 left-0 transition-all duration-500";
+    }
 
     // Diário de Bordo
     const textarea = document.getElementById("meeting-notes");
