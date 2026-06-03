@@ -7,25 +7,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const sheetURL = 'https://docs.google.com/spreadsheets/d/163X5ADTJkHXK4INVs4KPdAXveUXhz0sYEoDGIdHWdOM/export?format=csv&gid=1067661499';
 
-    Papa.parse(sheetURL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            const parsedData = processTrackingData(results.data);
-            if (!parsedData || parsedData.length === 0) {
-                document.getElementById('network-status').textContent = 'Nenhuma EJ da Juniores encontrada.';
-                return;
-            }
-            initGlobalKPIs(parsedData);
-            initCharts(parsedData);
-            initNetworkGraph(parsedData);
-        },
-        error: function(err) {
-            console.error("Erro ao carregar o CSV:", err);
-            document.getElementById('network-status').textContent = 'Falha ao conectar no Google Sheets.';
-        }
-    });
+    fetch(sheetURL)
+        .then(response => response.text())
+        .then(text => {
+            // Remove a primeira linha inútil ("Mês em Análise: Junho")
+            const lines = text.split('\n');
+            lines.shift();
+            const cleanCSV = lines.join('\n');
+
+            Papa.parse(cleanCSV, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const parsedData = processTrackingData(results.data);
+                    if (!parsedData || parsedData.length === 0) {
+                        document.getElementById('network-status').textContent = 'Nenhuma EJ da Juniores encontrada.';
+                        return;
+                    }
+                    initGlobalKPIs(parsedData);
+                    initCharts(parsedData);
+                    initNetworkGraph(parsedData);
+                },
+                error: function(err) {
+                    console.error("Erro ao fazer parse do CSV:", err);
+                    document.getElementById('network-status').textContent = 'Falha ao conectar no Google Sheets.';
+                }
+            });
+        })
+        .catch(err => {
+            console.error("Erro no fetch:", err);
+            document.getElementById('network-status').textContent = 'Erro ao baixar planilha.';
+        });
 });
 
 function cleanMoney(val) {
