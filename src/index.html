@@ -26,7 +26,9 @@
                         },
                         status: {
                             emerald: '#10b981',
-                            red: '#ef4444'
+                            red: '#ef4444',
+                            yellow: '#f59e0b',
+                            zerada: '#334155'
                         }
                     },
                     fontFamily: {
@@ -48,57 +50,54 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Custom tweaks to layout */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 350px 1fr 380px; /* Left panel, Network center, Right Profile Panel */
+            grid-template-columns: 350px 1fr 400px;
             grid-template-rows: 90px 1fr;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
         }
-        
         .header-area { grid-column: 1 / 4; grid-row: 1; }
         .left-panel { grid-column: 1; grid-row: 2; overflow-y: auto; }
         .center-panel { grid-column: 2; grid-row: 2; position: relative;}
         .right-panel { grid-column: 3; grid-row: 2; overflow-y: auto; }
-        
         #network-canvas { width: 100%; height: 100%; background: #0b1121; }
     </style>
 </head>
 <body class="bg-es-dark text-slate-200 font-sans antialiased dashboard-grid">
 
-    <!-- Header & KPIs Globais -->
+    <!-- Header -->
     <header class="header-area glass-panel flex justify-between items-center px-6 border-b border-white/10 z-10">
         <div>
             <h1 class="text-3xl font-heading font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-es-blue to-es-pink">
-                BI Juniores ES
+                Dinâmica de Rede - Juniores ES
             </h1>
-            <p class="text-sm text-slate-400 mt-1">Mapeamento Tático e Dinâmica de Rede</p>
+            <p class="text-sm text-slate-400 mt-1">Previsibilidade e Tracking (DDE 26)</p>
         </div>
         
         <!-- Global KPIs -->
         <div class="flex gap-6">
             <div class="flex flex-col">
-                <span class="text-xs text-slate-400 font-semibold uppercase">Faturamento Total (Proj.)</span>
+                <span class="text-xs text-slate-400 font-semibold uppercase">Faturamento Alcançado</span>
                 <span id="global-revenue" class="text-xl font-bold text-white">Carregando...</span>
             </div>
             <div class="w-px bg-white/10 my-1"></div>
             <div class="flex flex-col">
-                <span class="text-xs text-slate-400 font-semibold uppercase">Média CSAT Geral</span>
+                <span class="text-xs text-slate-400 font-semibold uppercase">CSAT Global</span>
                 <span id="global-csat" class="text-xl font-bold text-white">0.0</span>
             </div>
             <div class="w-px bg-white/10 my-1"></div>
             <div class="flex flex-col">
-                <span class="text-xs text-slate-400 font-semibold uppercase">EJs em Alto Crescimento</span>
+                <span class="text-xs text-slate-400 font-semibold uppercase">EJs Excelentes</span>
                 <span id="global-ac" class="text-xl font-bold text-status-emerald">0 / 28</span>
             </div>
         </div>
     </header>
 
-    <!-- Left Panel: Analytics & Charts -->
+    <!-- Left Panel -->
     <aside class="left-panel glass-panel border-r border-white/10 p-5 flex flex-col gap-6 custom-scrollbar z-10">
-        <h2 class="text-xl font-heading font-bold text-white border-b border-white/10 pb-2">Desempenho da Rede</h2>
+        <h2 class="text-xl font-heading font-bold text-white border-b border-white/10 pb-2">Ranking de Previsibilidade</h2>
         
         <div class="card p-3 rounded-xl bg-es-panel/50 border border-white/5">
             <h3 class="text-sm font-semibold text-slate-300 mb-3">Top 10 EJs - Faturamento</h3>
@@ -108,121 +107,115 @@
         </div>
 
         <div class="card p-3 rounded-xl bg-es-panel/50 border border-white/5">
-            <h3 class="text-sm font-semibold text-slate-300 mb-3">Top 10 EJs - Projetos</h3>
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Top 10 EJs - Engajamento</h3>
             <div class="w-full h-64">
-                <canvas id="projectsChart"></canvas>
+                <canvas id="engChart"></canvas>
             </div>
         </div>
         
-        <!-- Legenda da Rede -->
         <div class="mt-auto pt-4">
-            <h4 class="text-xs text-slate-400 font-bold uppercase mb-2">Legenda da Rede Central</h4>
-            <div class="flex items-center gap-2 text-sm mb-2">
-                <span class="w-3 h-3 rounded-full bg-status-emerald shadow-[0_0_8px_#10b981]"></span>
-                Alto Crescimento (Verde)
-            </div>
-            <div class="flex items-center gap-2 text-sm mb-2">
-                <span class="w-3 h-3 rounded-full bg-status-red shadow-[0_0_8px_#ef4444]"></span>
-                At Risk (Vermelho)
-            </div>
-            <div class="flex items-center gap-2 text-sm">
-                <span class="w-3 h-3 rounded-full bg-es-blue shadow-[0_0_8px_#78BCE2]"></span>
-                Crescimento Padrão (Azul)
-            </div>
+            <h4 class="text-xs text-slate-400 font-bold uppercase mb-2">Farol de Excelência (Grafo)</h4>
+            <div class="flex items-center gap-2 text-sm mb-2"><span class="w-3 h-3 rounded-full bg-status-emerald shadow-[0_0_8px_#10b981]"></span> Verde (Excelente)</div>
+            <div class="flex items-center gap-2 text-sm mb-2"><span class="w-3 h-3 rounded-full bg-status-yellow shadow-[0_0_8px_#f59e0b]"></span> Amarelo (Atenção)</div>
+            <div class="flex items-center gap-2 text-sm mb-2"><span class="w-3 h-3 rounded-full bg-status-red shadow-[0_0_8px_#ef4444]"></span> Vermelho (Alerta)</div>
+            <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 rounded-full bg-status-zerada shadow-[0_0_8px_#334155]"></span> Zerada</div>
         </div>
     </aside>
 
-    <!-- Center Panel: Network Graph -->
+    <!-- Center Panel -->
     <main class="center-panel">
-        <!-- Floating indicator -->
         <div class="absolute top-4 left-4 bg-es-dark/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 z-10 text-xs text-slate-300 pointer-events-none">
-            <span id="network-status">Iniciando motor de física...</span>
+            <span id="network-status">Montando estrutura estática da rede...</span>
         </div>
-        
         <div id="network-canvas"></div>
     </main>
 
-    <!-- Right Panel: Surgical Profile -->
+    <!-- Right Panel -->
     <aside id="sidebar" class="right-panel glass-panel border-l border-white/10 p-6 flex flex-col gap-6 custom-scrollbar z-10 bg-es-dark">
-        <!-- Default State when no node is selected -->
         <div id="no-selection" class="flex-1 flex flex-col items-center justify-center text-center opacity-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
             </svg>
             <p class="text-lg font-semibold text-slate-300">Selecione uma EJ</p>
-            <p class="text-sm text-slate-400">Clique em qualquer nó do grafo para visualizar o diagnóstico de maturidade profunda.</p>
+            <p class="text-sm text-slate-400">Clique na rede para ver os Indicadores Essenciais e Previsibilidade.</p>
         </div>
 
-        <!-- Selected State -->
         <div id="selection-details" class="hidden flex-col gap-6">
-            <!-- Sidebar Header -->
             <div class="border-b border-white/10 pb-4">
-                <span id="ej-cluster" class="text-xs font-semibold tracking-wider text-es-blue uppercase px-2 py-1 bg-es-blue/10 rounded-md">Cluster X</span>
-                <h2 id="ej-name" class="text-3xl font-heading font-bold text-white mt-3">Nome da EJ</h2>
-                <p id="ej-fundacao" class="text-sm text-slate-400 mt-1">Fundada em ...</p>
+                <span id="ej-cluster" class="text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-md text-slate-900">Cluster</span>
+                <h2 id="ej-name" class="text-3xl font-heading font-bold text-white mt-3 leading-tight">Nome da EJ</h2>
             </div>
 
-            <!-- Alert Box (At Risk) -->
-            <div id="risk-alert" class="hidden p-4 rounded-xl bg-status-red/10 border border-status-red/30">
-                <div class="flex items-center gap-2 text-status-red font-semibold mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    Atenção: At Risk
-                </div>
-                <p class="text-sm text-red-200 leading-tight">Projeção linear de faturamento está abaixo da meta anual estipulada.</p>
-            </div>
-
-            <!-- Faturamento Progress -->
-            <div class="card p-4 rounded-xl bg-es-panel/50 border border-white/5">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-sm font-semibold text-slate-300">Faturamento</h3>
-                    <span id="faturamento-percent" class="text-sm font-bold text-es-blue">0%</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-2.5 mb-2">
-                    <div id="faturamento-bar" class="bg-gradient-to-r from-es-blue to-blue-400 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-slate-400">
-                    <span id="faturamento-alcancado">R$ 0</span>
-                    <span id="faturamento-meta">Meta: R$ 0</span>
-                </div>
-            </div>
-
-            <!-- Projetos Progress -->
-            <div class="card p-4 rounded-xl bg-es-panel/50 border border-white/5">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-sm font-semibold text-slate-300">Projetos Executados</h3>
-                    <span id="projetos-percent" class="text-sm font-bold text-es-pink">0%</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-2.5 mb-2">
-                    <div id="projetos-bar" class="bg-gradient-to-r from-es-pink to-pink-400 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-slate-400">
-                    <span id="projetos-alcancado">0</span>
-                    <span id="projetos-meta">Meta: 0</span>
-                </div>
-            </div>
-
-            <!-- KPIs Minors -->
+            <!-- 4 INDICADORES ESSENCIAIS -->
             <div class="grid grid-cols-2 gap-3">
-                <div class="card p-3 rounded-xl bg-es-panel/50 border border-white/5">
-                    <p class="text-xs text-slate-400 mb-1">CSAT</p>
-                    <p id="kpi-csat" class="text-lg font-bold text-white">0.0</p>
+                <!-- FATURAMENTO -->
+                <div class="card p-3 rounded-xl bg-status-emerald border border-green-500/50 text-white shadow-lg shadow-status-emerald/10">
+                    <p class="text-[11px] font-bold mb-1 opacity-90 uppercase">Faturamento</p>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] opacity-75">Alcançado</p>
+                            <p id="card-fat-alc" class="font-bold text-[15px] leading-none">R$ 0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] opacity-75">Meta</p>
+                            <p id="card-fat-meta" class="font-bold text-xs leading-none">R$ 0</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card p-3 rounded-xl bg-es-panel/50 border border-white/5">
-                    <p class="text-xs text-slate-400 mb-1">Crescimento</p>
-                    <p id="kpi-ac" class="text-lg font-bold text-status-emerald">Não</p>
+                <!-- CSAT -->
+                <div class="card p-3 rounded-xl bg-status-emerald border border-green-500/50 text-white shadow-lg shadow-status-emerald/10">
+                    <p class="text-[11px] font-bold mb-1 opacity-90 uppercase">CSAT</p>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] opacity-75">Alcançado</p>
+                            <p id="card-csat-alc" class="font-bold text-[15px] leading-none">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] opacity-75">Meta</p>
+                            <p id="card-csat-meta" class="font-bold text-xs leading-none">0</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- TEMPO -->
+                <div class="card p-3 rounded-xl bg-status-emerald border border-green-500/50 text-white shadow-lg shadow-status-emerald/10">
+                    <p class="text-[11px] font-bold mb-1 opacity-90 uppercase truncate">Tempo Perm. no MEJ</p>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] opacity-75">Alcançado</p>
+                            <p id="card-tempo-alc" class="font-bold text-[15px] leading-none">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] opacity-75">Meta</p>
+                            <p id="card-tempo-meta" class="font-bold text-xs leading-none">0</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- ENGAJAMENTO -->
+                <div class="card p-3 rounded-xl bg-status-emerald border border-green-500/50 text-white shadow-lg shadow-status-emerald/10">
+                    <p class="text-[11px] font-bold mb-1 opacity-90 uppercase truncate">Engajamento c/ MEJ</p>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] opacity-75">Alcançado</p>
+                            <p id="card-eng-alc" class="font-bold text-[15px] leading-none">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] opacity-75">Meta</p>
+                            <p id="card-eng-meta" class="font-bold text-xs leading-none">0</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Executive Summary -->
+            <!-- Previsibilidade (Gráfico) -->
             <div class="card p-4 rounded-xl bg-es-panel/50 border border-white/5">
-                <h3 class="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-es-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Contexto (Extraído do PE)
-                </h3>
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">Previsibilidade: Faturamento</h3>
+                <div class="w-full h-40">
+                    <canvas id="predictChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card p-4 rounded-xl bg-es-panel/50 border border-white/5">
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">Contexto Estratégico</h3>
                 <p id="ej-summary" class="text-xs text-slate-400 leading-relaxed italic border-l-2 border-es-blue/50 pl-3">
                     Nenhum resumo extraído.
                 </p>

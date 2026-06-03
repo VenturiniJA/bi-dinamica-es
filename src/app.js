@@ -1,7 +1,8 @@
 // src/app.js
 
+let predictChartInstance = null;
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Carregar dados e inicializar o dashboard
     fetch('db.json')
         .then(response => response.json())
         .then(data => {
@@ -9,13 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Nenhum dado encontrado no db.json");
                 return;
             }
-            // 1. Atualiza KPIs Globais
             initGlobalKPIs(data);
-            
-            // 2. Cria os gráficos do lado esquerdo (Chart.js)
             initCharts(data);
-            
-            // 3. Renderiza o Grafo
             initNetworkGraph(data);
         })
         .catch(error => {
@@ -31,12 +27,12 @@ function initGlobalKPIs(dados) {
     let acCount = 0;
 
     dados.forEach(ej => {
-        totalRevenue += ej.faturamento.projetado || 0;
+        totalRevenue += ej.faturamento.alcancado || 0;
         if (ej.csat && ej.csat.alcancado > 0) {
             totalCSAT += ej.csat.alcancado;
             csatCount++;
         }
-        if (ej.altoCrescimento) {
+        if (ej.farol === "VERDE") {
             acCount++;
         }
     });
@@ -49,12 +45,10 @@ function initGlobalKPIs(dados) {
 }
 
 function initCharts(dados) {
-    // Definir as cores usando as configurações do tailwind
     const colorBlue = '#78BCE2';
-    const colorPink = '#F080A8';
+    const colorEmerald = '#10b981';
 
-    // Chart.js requires array of labels and array of data
-    // Ordenar por Faturamento
+    // Top 10 Faturamento
     const sortedByRevenue = [...dados].sort((a, b) => (b.faturamento.alcancado || 0) - (a.faturamento.alcancado || 0)).slice(0, 10);
     const revenueLabels = sortedByRevenue.map(d => d.nome.substring(0, 15));
     const revenueData = sortedByRevenue.map(d => d.faturamento.alcancado || 0);
@@ -65,15 +59,14 @@ function initCharts(dados) {
         data: {
             labels: revenueLabels,
             datasets: [{
-                label: 'Faturamento Atual',
+                label: 'Faturamento Alcançado',
                 data: revenueData,
                 backgroundColor: colorBlue,
                 borderRadius: 4
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
@@ -82,26 +75,25 @@ function initCharts(dados) {
         }
     });
 
-    // Ordenar por Projetos
-    const sortedByProj = [...dados].sort((a, b) => (b.projetos.alcancado || 0) - (a.projetos.alcancado || 0)).slice(0, 10);
-    const projLabels = sortedByProj.map(d => d.nome.substring(0, 15));
-    const projData = sortedByProj.map(d => d.projetos.alcancado || 0);
+    // Top 10 Engajamento
+    const sortedByEng = [...dados].sort((a, b) => (b.engajamento.alcancado || 0) - (a.engajamento.alcancado || 0)).slice(0, 10);
+    const engLabels = sortedByEng.map(d => d.nome.substring(0, 15));
+    const engData = sortedByEng.map(d => d.engajamento.alcancado || 0);
 
-    const ctxProj = document.getElementById('projectsChart').getContext('2d');
-    new Chart(ctxProj, {
+    const ctxEng = document.getElementById('engChart').getContext('2d');
+    new Chart(ctxEng, {
         type: 'bar',
         data: {
-            labels: projLabels,
+            labels: engLabels,
             datasets: [{
-                label: 'Projetos Realizados',
-                data: projData,
-                backgroundColor: colorPink,
+                label: 'Engajamento Alcançado',
+                data: engData,
+                backgroundColor: colorEmerald,
                 borderRadius: 4
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
                 x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
@@ -117,38 +109,32 @@ function initNetworkGraph(dados) {
     const nodesArray = [];
     const edgesArray = [];
 
-    const colorEmerald = "#10b981";
-    const colorRed = "#ef4444";
-    const colorBlue = "#78BCE2";
-    const colorWhite = "#FFFFFF";
+    const palette = {
+        VERDE: "#10b981",
+        AMARELO: "#f59e0b",
+        VERMELHO: "#ef4444",
+        ZERADA: "#334155"
+    };
 
-    // 1. Criar os Nós (Nodes) com tamanhos visíveis e logarítmicos
     dados.forEach(ej => {
+        let baseColor = palette[ej.farol] || "#78BCE2"; // Fallback blue
+        
         let nodeColor = {
-            background: colorBlue,
-            border: colorWhite,
-            highlight: { background: colorBlue, border: colorWhite }
+            background: baseColor,
+            border: "#FFFFFF",
+            highlight: { background: baseColor, border: "#FFFFFF" }
         };
 
-        if (ej.altoCrescimento) {
-            nodeColor.background = colorEmerald;
-            nodeColor.highlight.background = colorEmerald;
-        } else if (ej.atRisk) {
-            nodeColor.background = colorRed;
-            nodeColor.highlight.background = colorRed;
-        }
-
-        // Tamanho base logarítmico para não estourar na tela
-        const fatValue = ej.faturamento.projetado || 1000;
-        const nodeSize = Math.max(10, Math.min(30, Math.log10(fatValue) * 4));
+        const fatValue = ej.faturamento.metaAno || 1000;
+        const nodeSize = Math.max(10, Math.min(35, Math.log10(fatValue) * 4));
 
         nodesArray.push({
             id: ej.id,
-            label: ej.nome, // NOME AGORA APARECE SEMPRE
+            label: ej.nome,
             value: nodeSize, 
             group: ej.cluster,
             color: nodeColor,
-            font: { color: "#e2e8f0", face: "Inter", size: 14, strokeWidth: 3, strokeColor: "#0b1121" },
+            font: { color: "#e2e8f0", face: "Inter", size: 16, strokeWidth: 4, strokeColor: "#0b1121" },
             shape: "dot",
             borderWidth: 2,
             shadow: true,
@@ -156,15 +142,14 @@ function initNetworkGraph(dados) {
         });
     });
 
-    // 2. Criar as Arestas (Edges)
     for (let i = 0; i < dados.length; i++) {
         for (let j = i + 1; j < dados.length; j++) {
-            if (dados[i].cluster === dados[j].cluster && dados[i].cluster !== 0) {
+            if (dados[i].cluster === dados[j].cluster && dados[i].cluster !== 0 && !isNaN(dados[i].cluster)) {
                 edgesArray.push({
                     from: dados[i].id,
                     to: dados[j].id,
-                    color: { color: "rgba(255, 255, 255, 0.15)" },
-                    length: 150, 
+                    color: { color: "rgba(255, 255, 255, 0.1)" },
+                    length: 120, 
                     width: 1
                 });
             }
@@ -175,67 +160,48 @@ function initNetworkGraph(dados) {
     const edges = new vis.DataSet(edgesArray);
     const data = { nodes, edges };
 
-    // 3. Configuração
     const options = {
         nodes: {
             scaling: {
                 customScalingFunction: function (min, max, total, value) { return value / max; },
-                min: 10,
-                max: 30,
+                min: 15, max: 35,
                 label: { enabled: true, min: 14, max: 20 }
             }
         },
-        edges: {
-            smooth: { type: "continuous" }
-        },
+        edges: { smooth: { type: "continuous" } },
         physics: {
-            enabled: true, // Habilitado apenas para o carregamento inicial
+            enabled: true,
             barnesHut: {
-                gravitationalConstant: -3000,
-                centralGravity: 0.3,
-                springLength: 150,
-                springConstant: 0.04,
+                gravitationalConstant: -2000,
+                centralGravity: 0.1,
+                springLength: 100,
+                springConstant: 0.05,
                 damping: 0.09,
-                avoidOverlap: 0.5
+                avoidOverlap: 0.3
             },
-            stabilization: {
-                enabled: true,
-                iterations: 500, // Maior iteração para arrumar bem antes de mostrar
-                updateInterval: 50
-            }
+            stabilization: { enabled: true, iterations: 1000, updateInterval: 100 }
         },
-        interaction: {
-            hover: true,
-            tooltipDelay: 200,
-            zoomView: true,
-            dragView: true
-        }
+        interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true }
     };
 
     const network = new vis.Network(container, data, options);
 
-    // 4. Congelar a Física quando estiver pronto
     network.on("stabilizationProgress", function (params) {
-        document.getElementById('network-status').textContent = `Agrupando clusters... ${Math.round((params.iterations/params.total)*100)}%`;
+        document.getElementById('network-status').textContent = `Agrupando clusters: ${Math.round((params.iterations/params.total)*100)}%`;
     });
 
     network.on("stabilizationIterationsDone", function () {
-        document.getElementById('network-status').textContent = 'Rede Estática Ativa';
-        setTimeout(() => {
-            document.getElementById('network-status').style.opacity = '0';
-        }, 3000);
-        // DESLIGA A FÍSICA PARA O GRAFO FICAR ESTÁTICO!
+        document.getElementById('network-status').textContent = 'Rede Estática Ativa (Tracking Oficial)';
+        setTimeout(() => { document.getElementById('network-status').style.opacity = '0'; }, 3000);
         network.setOptions( { physics: false } );
     });
 
-    // 5. Clique no Nó -> Mostrar Perfil
     network.on("click", function (params) {
         if (params.nodes.length > 0) {
             const nodeId = params.nodes[0];
             const selectedNode = nodes.get(nodeId);
             openTacticalProfile(selectedNode.rawEJData);
         } else {
-            // Se clicar no vazio
             document.getElementById("no-selection").classList.remove("hidden");
             document.getElementById("selection-details").classList.add("hidden");
             document.getElementById("selection-details").classList.remove("flex");
@@ -249,44 +215,94 @@ function openTacticalProfile(ej) {
     details.classList.remove("hidden");
     details.classList.add("flex");
     
-    document.getElementById("ej-cluster").textContent = `CLUSTER ${ej.cluster}`;
+    // Header
+    const ejCluster = document.getElementById("ej-cluster");
+    ejCluster.textContent = `CLUSTER ${ej.cluster}`;
+    
+    // Cor de destaque baseada no farol
+    const palette = { "VERDE": "bg-status-emerald/20 text-status-emerald", "AMARELO": "bg-status-yellow/20 text-status-yellow", "VERMELHO": "bg-status-red/20 text-status-red", "ZERADA": "bg-slate-700 text-slate-300" };
+    ejCluster.className = `text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-md ${palette[ej.farol] || "bg-es-blue/10 text-es-blue"}`;
+    
     document.getElementById("ej-name").textContent = ej.nome;
-    document.getElementById("ej-fundacao").textContent = ej.fundacao;
 
-    const riskAlert = document.getElementById("risk-alert");
-    if (ej.atRisk) {
-        riskAlert.classList.remove("hidden");
-    } else {
-        riskAlert.classList.add("hidden");
-    }
+    // 4 Metas Cards
+    document.getElementById("card-fat-alc").textContent = `R$ ${ej.faturamento.alcancado.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+    document.getElementById("card-fat-meta").textContent = `R$ ${ej.faturamento.metaAno.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
 
-    const fatPercent = ej.faturamento.meta > 0 ? (ej.faturamento.alcancado / ej.faturamento.metaAno) * 100 : 0;
-    const projPercent = ej.projetos.meta > 0 ? (ej.projetos.alcancado / ej.projetos.meta) * 100 : 0;
+    document.getElementById("card-csat-alc").textContent = ej.csat.alcancado.toFixed(1);
+    document.getElementById("card-csat-meta").textContent = ej.csat.meta.toFixed(1);
 
-    document.getElementById("faturamento-percent").textContent = `${fatPercent.toFixed(1)}%`;
-    document.getElementById("faturamento-alcancado").textContent = `R$ ${ej.faturamento.alcancado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    document.getElementById("faturamento-meta").textContent = `Meta: R$ ${ej.faturamento.metaAno.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    
-    document.getElementById("faturamento-bar").style.width = `0%`;
-    setTimeout(() => { document.getElementById("faturamento-bar").style.width = `${Math.min(fatPercent, 100)}%`; }, 50);
+    document.getElementById("card-tempo-alc").textContent = ej.tempo.alcancado;
+    document.getElementById("card-tempo-meta").textContent = ej.tempo.meta;
 
-    document.getElementById("projetos-percent").textContent = `${projPercent.toFixed(1)}%`;
-    document.getElementById("projetos-alcancado").textContent = ej.projetos.alcancado;
-    document.getElementById("projetos-meta").textContent = `Meta: ${ej.projetos.meta}`;
-    
-    document.getElementById("projetos-bar").style.width = `0%`;
-    setTimeout(() => { document.getElementById("projetos-bar").style.width = `${Math.min(projPercent, 100)}%`; }, 50);
+    document.getElementById("card-eng-alc").textContent = ej.engajamento.alcancado;
+    document.getElementById("card-eng-meta").textContent = ej.engajamento.meta;
 
-    document.getElementById("kpi-csat").textContent = ej.csat.alcancado.toFixed(1);
-    
-    const kpiAc = document.getElementById("kpi-ac");
-    if (ej.altoCrescimento) {
-        kpiAc.textContent = "Sim";
-        kpiAc.className = "text-lg font-bold text-status-emerald";
-    } else {
-        kpiAc.textContent = "Não";
-        kpiAc.className = "text-lg font-bold text-slate-400";
-    }
-
+    // Context
     document.getElementById("ej-summary").textContent = ej.summary;
+
+    // Line Chart Previsibilidade
+    renderPredictChart(ej.faturamento.metaAno, ej.faturamento.alcancado, 6); // 6 = Mês de Junho
+}
+
+function renderPredictChart(metaTotalAno, alcançadoJunho, mesAtualIndex) {
+    const ctx = document.getElementById('predictChart').getContext('2d');
+    
+    // Meses
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Meta Linear: Distribui a meta igualmente nos 12 meses
+    const metaLinearData = months.map((m, i) => metaTotalAno * ((i + 1) / 12));
+    
+    // Alcançado: Reta do zero até o mês atual
+    const alcançadoData = [];
+    for(let i=0; i<12; i++) {
+        if(i < mesAtualIndex) {
+            alcançadoData.push(alcançadoJunho * ((i+1)/mesAtualIndex));
+        } else {
+            alcançadoData.push(null);
+        }
+    }
+
+    if (predictChartInstance) {
+        predictChartInstance.destroy();
+    }
+
+    predictChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Faturamento Alcançado',
+                    data: alcançadoData,
+                    borderColor: '#10b981', // Verde
+                    backgroundColor: '#10b981',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Meta Linear 2026',
+                    data: metaLinearData,
+                    borderColor: '#94a3b8', // Cinza
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom', labels: { color: '#cbd5e1', boxWidth: 12 } } },
+            scales: {
+                x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
+    });
 }
