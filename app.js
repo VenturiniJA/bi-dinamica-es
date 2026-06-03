@@ -77,16 +77,25 @@ function processData(trackRows, clusterRows) {
     // Mapeamento super robusto para Farol de Cluster (Tenta por ID, faz fallback por Nome)
     const clusterMapById = {};
     const clusterMapByName = {};
+    
+    const cHeaders = clusterRows.length > 0 ? Object.keys(clusterRows[0]) : [];
+    const colCSit = cHeaders.find(k => k.includes('SITUA'));
+    const colCAlm = cHeaders.find(k => k.includes('ALMEJADO'));
+    const colCIndAtual = cHeaders.find(k => k.includes('ATUAL') && k.includes('NDICE'));
+    const colCIndPrev = cHeaders.find(k => k.includes('PREVISTO') && k.includes('NDICE'));
+    const colCIndMin = cHeaders.find(k => k.includes('NIMO') && k.includes('NDICE'));
+    const colCIndPular = cHeaders.find(k => k.includes('SUBIR') && k.includes('NDICE'));
+
     clusterRows.forEach(row => {
-        let id = safeFloat(row['ID']);
-        let nomeEJ = String(row['EJ'] || '').trim().toLowerCase();
+        let id = safeFloat(row['ID'] || row['id']);
+        let nomeEJ = String(row['EJ'] || row['ej'] || '').trim().toLowerCase();
         let forecast = {
-            situacao: String(row['SITUAÇÃO ATUAL'] || '').trim().toUpperCase(),
-            clusterAlmejado: safeFloat(row['CLUSTER ALMEJADO']),
-            indiceAtual: cleanMoney(row['ÍNDICE ATUAL']),
-            indicePrevisto: cleanMoney(row['ÍNDICE PREVISTO']),
-            indiceMinimo: cleanMoney(row['ÍNDICE MÍNIMO']),
-            indicePular: cleanMoney(row['ÍNDICE P/ SUBIR'])
+            situacao: String(row[colCSit] || '').trim().toUpperCase(),
+            clusterAlmejado: safeFloat(row[colCAlm]),
+            indiceAtual: cleanMoney(row[colCIndAtual]),
+            indicePrevisto: cleanMoney(row[colCIndPrev]),
+            indiceMinimo: cleanMoney(row[colCIndMin]),
+            indicePular: cleanMoney(row[colCIndPular])
         };
         if(id > 0) clusterMapById[id] = forecast;
         if(nomeEJ) clusterMapByName[nomeEJ] = forecast;
@@ -146,7 +155,7 @@ function initGlobalKPIs(dados) {
     let acCount = 0;
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
-        if (ej.farol === "VERDE") acCount++;
+        if (ej.previsao.situacao === "SOBE") acCount++;
     });
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
     document.getElementById("global-ac").textContent = `${acCount} / ${dados.length}`;
