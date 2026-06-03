@@ -1,0 +1,174 @@
+{
+  "name": "BI-JUNIORES-ES",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 22 * * 5"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        }
+      },
+      "name": "Firecrawl API - Ingestion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 6,
+        "unit": "seconds"
+      },
+      "name": "Wait (Rate Limit 10/min)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/*\n* CÓDIGO DE TRANSFORMAÇÃO E ÁLGEBRA DA PLATAFORMA JAMSTACK BI-JUNIORES-ES\n* \n* Este script simula o tratamento analítico pós-extração pelo Firecrawl.\n*/\n\nconst rawData = $input.all();\nconst currentMonth = 6; // Exemplo: Junho (mês 6)\nconst totalMonths = 12;\n\n// Array simulado das 28 EJs com base no DB ou extração\nconst ejs = []; // Aqui você preenche iterativamente no processo real.\n\nconst processedEjs = ejs.map(ej => {\n  // Lógica de Alto Crescimento (Booleano)\n  // AC = (Faturamento >= Meta) && (Projetos >= Meta)\n  const isHighGrowth = (ej.faturamentoAlcancado >= ej.faturamentoMeta) && (ej.projetosAlcancado >= ej.projetosMeta);\n  \n  // Matemática de CSAT\n  // Índice de coleta sobre os projetos avaliáveis\n  const csatScore = ej.projetosAvaliados > 0 ? (ej.somaCsat / ej.projetosAvaliados) * 100 : 0;\n  \n  // Previsão Run-Rate Linear (At Risk)\n  // Tendência = Média Mensal * 12\n  const averageMonthlyRevenue = ej.faturamentoAlcancado / currentMonth;\n  const projectedYearEndRevenue = averageMonthlyRevenue * totalMonths;\n  const isAtRisk = projectedYearEndRevenue < ej.faturamentoMetaAno;\n\n  return {\n    id: ej.id,\n    nome: ej.nome,\n    cluster: ej.cluster,\n    faturamento: {\n      meta: ej.faturamentoMetaAno,\n      alcancado: ej.faturamentoAlcancado,\n      projetado: projectedYearEndRevenue\n    },\n    csat: csatScore,\n    altoCrescimento: isHighGrowth,\n    atRisk: isAtRisk,\n    summary: \"Resumo extraído via Firecrawl do PDF do Planejamento Estratégico...\"\n  };\n});\n\n// Convertemos para buffer para o próximo node codificar em base64\nreturn [{ json: { result: processedEjs } }];\n"
+      },
+      "name": "Code - Algebraic Transformation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.github.com/repos/YOUR_USER/YOUR_REPO/contents/src/db.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GITHUB_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "auto(data): atualiza BI da dinâmica de rede"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.base64Content }}"
+            },
+            {
+              "name": "sha",
+              "value": "={{ $json.fileSha }}"
+            }
+          ]
+        }
+      },
+      "name": "GitHub Deploy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        800,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Firecrawl API - Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firecrawl API - Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Wait (Rate Limit 10/min)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit 10/min)": {
+      "main": [
+        [
+          {
+            "node": "Code - Algebraic Transformation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Algebraic Transformation": {
+      "main": [
+        [
+          {
+            "node": "GitHub Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "versionId": "BI-JUNIORES-ES-01",
+  "tags": [
+    {
+      "createdAt": "2026-06-03",
+      "updatedAt": "2026-06-03",
+      "id": "tag_bi_juniores",
+      "name": "BI-JUNIORES-ES"
+    }
+  ]
+}

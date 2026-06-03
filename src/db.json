@@ -1,0 +1,814 @@
+[
+  {
+    "id": 62.0,
+    "nome": "Energy Junior",
+    "cluster": 3,
+    "fundacao": "2012-03-16 00:00:00",
+    "faturamento": {
+      "meta": 45670.9,
+      "alcancado": 16300.0,
+      "metaAno": 45670.9,
+      "projetado": 32600.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 6.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 64.0,
+    "nome": "Equacione Jr.",
+    "cluster": 1,
+    "fundacao": "2015-08-06 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 245.0,
+      "metaAno": 1500.0,
+      "projetado": 490.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 58.1,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 79.0,
+    "nome": "Zetta Júnior",
+    "cluster": 5,
+    "fundacao": "2015-12-13 00:00:00",
+    "faturamento": {
+      "meta": 38500.0,
+      "alcancado": 24778.0,
+      "metaAno": 38500.0,
+      "projetado": 49556.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 8.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 81.0,
+    "nome": "Adapti",
+    "cluster": 4,
+    "fundacao": "2014-12-31 00:00:00",
+    "faturamento": {
+      "meta": 92488.95,
+      "alcancado": 20698.9,
+      "metaAno": 92488.95,
+      "projetado": 41397.8
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 7.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 85.0,
+    "nome": "CJA - Consultores Juniores Associados/Ufes",
+    "cluster": 5,
+    "fundacao": "2008-03-03 00:00:00",
+    "faturamento": {
+      "meta": 207326.36,
+      "alcancado": 90409.91,
+      "metaAno": 207326.36,
+      "projetado": 180819.82
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 12.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 88.0,
+    "nome": "EJCAD Consultoria",
+    "cluster": 1,
+    "fundacao": "2008-03-03 00:00:00",
+    "faturamento": {
+      "meta": 15000.0,
+      "alcancado": 0.0,
+      "metaAno": 15000.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 5.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 90.0,
+    "nome": "CT Junior",
+    "cluster": 5,
+    "fundacao": "2008-05-02 00:00:00",
+    "faturamento": {
+      "meta": 418041.47,
+      "alcancado": 149447.0,
+      "metaAno": 418041.47,
+      "projetado": 298894.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 17.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 352.0,
+    "nome": "Ecos Jr",
+    "cluster": 3,
+    "fundacao": "2008-01-01 00:00:00",
+    "faturamento": {
+      "meta": 66290.13,
+      "alcancado": 5650.0,
+      "metaAno": 66290.13,
+      "projetado": 11300.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 353.0,
+    "nome": "EJUVV",
+    "cluster": 3,
+    "fundacao": "2016-12-18 00:00:00",
+    "faturamento": {
+      "meta": 44774.83,
+      "alcancado": 25439.99,
+      "metaAno": 44774.83,
+      "projetado": 50879.98000000001
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 2.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 381.0,
+    "nome": "Cinética Júnior",
+    "cluster": 2,
+    "fundacao": "2016-08-06 00:00:00",
+    "faturamento": {
+      "meta": 12126.4,
+      "alcancado": 12460.0,
+      "metaAno": 12126.4,
+      "projetado": 24920.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 399.0,
+    "nome": "Enpro Júnior",
+    "cluster": 3,
+    "fundacao": "2016-12-17 00:00:00",
+    "faturamento": {
+      "meta": 51890.3,
+      "alcancado": 0.0,
+      "metaAno": 51890.3,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 64.0,
+      "engajamentoAlcancado": 9.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 441.0,
+    "nome": "Projagro",
+    "cluster": 1,
+    "fundacao": "2016-09-21 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 50.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 582.0,
+    "nome": "Archipolis Júnior",
+    "cluster": 3,
+    "fundacao": "2017-07-01 00:00:00",
+    "faturamento": {
+      "meta": 26382.4,
+      "alcancado": 22590.5,
+      "metaAno": 26382.4,
+      "projetado": 45181.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 5.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 583.0,
+    "nome": "CONSTAT - Consultoria Estatística",
+    "cluster": 1,
+    "fundacao": "2017-07-01 00:00:00",
+    "faturamento": {
+      "meta": 10461.55,
+      "alcancado": 0.0,
+      "metaAno": 10461.55,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 59.3,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 588.0,
+    "nome": "Floema Júnior - Consultoria Florestal e Madeireira",
+    "cluster": 1,
+    "fundacao": "2017-07-01 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 71.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 610.0,
+    "nome": "Projeta Júnior",
+    "cluster": 3,
+    "fundacao": "2017-09-02 00:00:00",
+    "faturamento": {
+      "meta": 11330.02,
+      "alcancado": 1199.0,
+      "metaAno": 11330.02,
+      "projetado": 2398.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 705.0,
+    "nome": "Tectus Jr.",
+    "cluster": 4,
+    "fundacao": "2017-11-11 00:00:00",
+    "faturamento": {
+      "meta": 55000.0,
+      "alcancado": 5490.0,
+      "metaAno": 55000.0,
+      "projetado": 10980.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 753.0,
+    "nome": "Gama Jr",
+    "cluster": 3,
+    "fundacao": "2017-12-15 00:00:00",
+    "faturamento": {
+      "meta": 43116.71,
+      "alcancado": 4497.0,
+      "metaAno": 43116.71,
+      "projetado": 8994.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 5.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 5.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 1019.0,
+    "nome": "MORPHEUS.JR",
+    "cluster": 1,
+    "fundacao": "2018-08-23 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 50.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 1083.0,
+    "nome": "Tática Jr",
+    "cluster": 1,
+    "fundacao": "2018-10-15 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 50.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 1146.0,
+    "nome": "NutrESul Jr",
+    "cluster": 3,
+    "fundacao": "2018-11-17 00:00:00",
+    "faturamento": {
+      "meta": 22830.51,
+      "alcancado": 4902.25,
+      "metaAno": 22830.51,
+      "projetado": 9804.5
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 2.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 1526.0,
+    "nome": "I9-Pharma",
+    "cluster": 1,
+    "fundacao": "2019-09-28 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 2176.89,
+      "metaAno": 1500.0,
+      "projetado": 4353.78
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 1751.0,
+    "nome": "EDV JR",
+    "cluster": 3,
+    "fundacao": "2019-12-23 00:00:00",
+    "faturamento": {
+      "meta": 60726.61,
+      "alcancado": 31116.0,
+      "metaAno": 60726.61,
+      "projetado": 62232.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 6.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 2609.0,
+    "nome": "Eletrolit",
+    "cluster": 1,
+    "fundacao": "2021-08-09 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 50.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 3029.0,
+    "nome": "BiomES",
+    "cluster": 2,
+    "fundacao": "2021-12-17 00:00:00",
+    "faturamento": {
+      "meta": 16830.0,
+      "alcancado": 16040.0,
+      "metaAno": 16830.0,
+      "projetado": 32080.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 2.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 3036.0,
+    "nome": "TecVix Jr.",
+    "cluster": 1,
+    "fundacao": "2021-11-23 00:00:00",
+    "faturamento": {
+      "meta": 1500.0,
+      "alcancado": 0.0,
+      "metaAno": 1500.0,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 0.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 50.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 3173.0,
+    "nome": "Harpia Consultoria Júnior",
+    "cluster": 1,
+    "fundacao": "2021-11-23 00:00:00",
+    "faturamento": {
+      "meta": 2176.54,
+      "alcancado": 0.0,
+      "metaAno": 2176.54,
+      "projetado": 0.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 0.0
+    },
+    "projetos": {
+      "meta": 0.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": true,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  },
+  {
+    "id": 3329.0,
+    "nome": "NUTRINOVA",
+    "cluster": 2,
+    "fundacao": "2022-12-31 00:00:00",
+    "faturamento": {
+      "meta": 7508.6,
+      "alcancado": 5650.0,
+      "metaAno": 7508.6,
+      "projetado": 11300.0
+    },
+    "csat": {
+      "meta": 3.5,
+      "alcancado": 1.0
+    },
+    "membros": {
+      "permanenciaMeta": 50.0,
+      "permanenciaAlcancado": 0.0,
+      "engajamentoMeta": 75.0,
+      "engajamentoAlcancado": 3.0
+    },
+    "projetos": {
+      "meta": 1.0,
+      "alcancado": 0.0
+    },
+    "altoCrescimento": false,
+    "atRisk": false,
+    "summary": "Sem menção direta nos documentos de Planejamento Estratégico."
+  }
+]
