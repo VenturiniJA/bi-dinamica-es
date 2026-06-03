@@ -3,90 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI Juniores ES - Dinâmica de Rede</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
+    <title>BI Juniores ES - CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Outfit', 'sans-serif'] },
                     colors: {
-                        es: {
-                            blue: '#0284c7', // Darker blue for light theme
-                            pink: '#db2777', // Darker pink for light theme
-                            white: '#FFFFFF',
-                            dark: '#0f172a',
-                            panel: '#ffffff' // White panels
-                        },
-                        status: {
-                            emerald: '#10b981',
-                            red: '#ef4444',
-                            yellow: '#f59e0b',
-                            zerada: '#cbd5e1' // Lighter gray for zerada in light mode
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Outfit', 'sans-serif']
+                        'es-blue': '#1a365d', 'es-pink': '#e11d48',
+                        'status-emerald': '#10b981', 'status-yellow': '#f59e0b', 'status-red': '#ef4444', 'status-zerada': '#94a3b8'
                     }
                 }
             }
         }
     </script>
-
-    <!-- Vis-Network CDN -->
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link href="https://unpkg.com/vis-network/standalone/umd/vis-network.min.css" rel="stylesheet" type="text/css" />
-    
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- PapaParse CDN for CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
     <style>
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 350px 1fr 400px;
-            grid-template-rows: 90px 1fr;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-        }
-        .header-area { grid-column: 1 / 4; grid-row: 1; }
-        .left-panel { grid-column: 1; grid-row: 2; overflow-y: auto; }
-        .center-panel { grid-column: 2; grid-row: 2; position: relative;}
-        .right-panel { grid-column: 3; grid-row: 2; overflow-y: auto; }
-        #network-canvas { width: 100%; height: 100%; background: #f8fafc; } /* Light background for canvas */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased dashboard-grid">
+<body class="bg-slate-100 text-slate-800 h-screen overflow-hidden flex flex-col font-sans selection:bg-es-pink selection:text-white">
 
-    <!-- Header -->
-    <header class="header-area bg-white flex justify-between items-center px-6 border-b-4 border-es-blue z-10 shadow-sm relative">
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-es-blue via-white to-es-pink"></div>
-        <div>
-            <h1 class="text-3xl font-heading font-bold text-slate-900">
-                Dinâmica de Rede - Juniores ES
-            </h1>
-            <p class="text-sm text-slate-500 mt-1">Previsibilidade e Tracking (DDE 26)</p>
-        </div>
-        
-        <!-- Global KPIs -->
-        <div class="flex gap-6">
-            <div class="flex flex-col">
-                <span class="text-xs text-slate-500 font-semibold uppercase">Faturamento Alcançado</span>
-                <span id="global-revenue" class="text-xl font-bold text-slate-900">Carregando...</span>
+    <!-- Header Principal -->
+    <header class="glass-header border-b border-slate-200 px-6 py-4 flex justify-between items-center z-30 shrink-0 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-es-blue to-es-pink flex items-center justify-center shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
             </div>
-            <div class="w-px bg-slate-200 my-1"></div>
+            <div>
+                <h1 class="text-2xl font-heading font-extrabold text-slate-900 tracking-tight">Dinâmica de Rede - Juniores ES</h1>
+                <p class="text-xs text-slate-500 font-medium tracking-wide">CRM Estratégico (Tracking + Farol de Cluster)</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <span id="network-status" class="text-xs font-semibold text-es-pink bg-pink-50 px-2 py-1 rounded-md animate-pulse">Carregando CRM...</span>
+            </div>
+            <div class="h-8 w-px bg-slate-200"></div>
+            <div class="flex items-center gap-6">
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Faturamento Alcançado</p>
+                    <p id="global-revenue" class="text-xl font-bold text-slate-900">R$ 0</p>
+                </div>
                 <div>
                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">EJs Excelentes</p>
                     <p id="global-ac" class="text-2xl font-bold text-status-emerald">0 / 0</p>
@@ -95,192 +61,219 @@
         </div>
     </header>
 
-    <!-- Left Panel -->
-    <aside class="left-panel bg-white border-r border-slate-200 p-5 flex flex-col gap-4 custom-scrollbar z-10 shadow-sm">
-        <h2 class="text-xl font-heading font-bold text-slate-800 border-b border-slate-200 pb-2">Status da Rede (Clusters)</h2>
+    <div class="flex-1 flex overflow-hidden relative">
         
-        <div id="cluster-list" class="flex flex-col gap-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div class="text-xs text-slate-400 text-center py-10">Carregando agrupamentos...</div>
-        </div>
-        
-        <div class="mt-4 pt-4 border-t border-slate-200">
-            <h4 class="text-[10px] text-slate-500 font-bold uppercase mb-2">Farol de Excelência</h4>
-            <div class="flex items-center gap-2 text-xs mb-1 font-medium text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-emerald shadow-sm"></span> Verde (Excelente)</div>
-            <div class="flex items-center gap-2 text-xs mb-1 font-medium text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-yellow shadow-sm"></span> Amarelo (Atenção)</div>
-            <div class="flex items-center gap-2 text-xs mb-1 font-medium text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-red shadow-sm"></span> Vermelho (Alerta)</div>
-            <div class="flex items-center gap-2 text-xs font-medium text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-zerada shadow-sm border border-slate-300"></span> Zerada</div>
-        </div>
-    </aside>
-
-    <!-- Center Panel -->
-    <main class="center-panel relative">
-        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 z-10 text-xs text-slate-600 pointer-events-none shadow-sm">
-            <span id="network-status" class="font-medium">Montando estrutura estática da rede...</span>
-        </div>
-        
-        <div id="network-canvas" class="w-full h-full transition-opacity duration-300"></div>
-
-        <!-- Meeting Notes Overlay -->
-        <div id="meeting-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 hidden flex-col p-8 transition-opacity duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-heading font-bold text-slate-800 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-es-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Diário de Bordo
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">Pautas e Pontos de Atenção - <span id="meeting-ej-name" class="font-bold text-slate-700"></span></p>
-                </div>
-                <button id="btn-close-meeting" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
+        <!-- Painel Esquerdo (Lista) -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+            <div class="p-5 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-sm font-heading font-bold text-slate-800 uppercase tracking-wide">EJs por Cluster</h2>
             </div>
+            <div id="cluster-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+                <!-- Lista injetada aqui -->
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50">
+                <h4 class="text-[10px] text-slate-500 font-bold uppercase mb-2">Legenda de Farol</h4>
+                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-emerald"></span> Excelente</div>
+                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-yellow"></span> Atenção</div>
+                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-red"></span> Alerta</div>
+                <div class="flex items-center gap-2 text-xs text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Zerada</div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace (Direita) -->
+        <main class="flex-1 bg-slate-50/50 flex flex-col relative overflow-hidden">
             
-            <div class="flex-1 flex flex-col bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-inner">
-                <textarea id="meeting-notes" class="w-full h-full p-5 bg-transparent resize-none outline-none text-slate-700 text-[15px] leading-relaxed custom-scrollbar placeholder:text-slate-400" placeholder="Escreva os feedbacks, pendências e combinados da reunião com esta EJ aqui... (Salvo automaticamente no seu navegador)"></textarea>
-            </div>
-            
-            <div class="mt-4 flex justify-between items-center text-xs text-slate-500">
-                <p class="flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    Anotações salvas em disco local
-                </p>
-                <p>Uso Exclusivo Interno (Federação)</p>
-            </div>
-        </div>
-    </main>
-
-    <!-- Right Panel -->
-    <aside id="sidebar" class="right-panel bg-white border-l border-slate-200 p-6 flex flex-col gap-6 custom-scrollbar z-10 shadow-sm">
-        <div id="no-selection" class="flex-1 flex flex-col items-center justify-center text-center opacity-70">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-            </svg>
-            <p class="text-lg font-semibold text-slate-600">Selecione uma EJ</p>
-            <p class="text-sm text-slate-500">Clique na rede para ver os Indicadores Essenciais e Previsibilidade.</p>
-        </div>
-
-        <div id="selection-details" class="hidden flex-col gap-6">
-            <div class="border-b border-slate-200 pb-4">
-                <div class="flex justify-between items-start mb-2">
-                    <span id="ej-cluster" class="text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-md text-slate-700 bg-slate-100">Cluster</span>
-                    <span class="text-[10px] text-slate-400 font-medium uppercase border border-slate-200 px-2 py-0.5 rounded-full">Ficha Tática</span>
+            <!-- VIEW 1: KANBAN DASHBOARD (Visão Macro) -->
+            <div id="crm-dashboard" class="absolute inset-0 flex flex-col p-6 overflow-hidden transition-all duration-300">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-heading font-bold text-slate-800">Quadro de Previsibilidade</h2>
+                    <p class="text-sm text-slate-500 mt-1">Acompanhe as EJs agrupadas pela projeção de salto ou queda de cluster.</p>
                 </div>
-                <h2 id="ej-name" class="text-3xl font-heading font-bold text-slate-900 mt-1 leading-tight">Nome da EJ</h2>
+                
+                <div class="flex-1 flex gap-6 overflow-x-auto custom-scrollbar pb-4">
+                    <!-- Coluna SOBE -->
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
+                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <span class="bg-emerald-100 text-emerald-700 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg></span>
+                                SOBEM DE CLUSTER
+                            </h3>
+                            <span id="count-sobe" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="kanban-sobe" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
+                    </div>
+
+                    <!-- Coluna PERMANECE -->
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
+                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <span class="bg-slate-200 text-slate-600 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16"></path></svg></span>
+                                PERMANECEM
+                            </h3>
+                            <span id="count-permanece" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="kanban-permanece" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
+                    </div>
+
+                    <!-- Coluna CAI -->
+                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
+                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <span class="bg-red-100 text-red-600 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg></span>
+                                RISCO DE QUEDA
+                            </h3>
+                            <span id="count-cai" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="kanban-cai" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Contexto Estratégico AI -->
-            <div class="card p-4 rounded-xl bg-blue-50/50 border border-blue-100 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-es-blue"></div>
-                <h3 class="text-[11px] font-bold text-es-blue uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clip-rule="evenodd" />
-                    </svg>
-                    Direcionamento Tático
-                </h3>
-                <p id="ej-ai-strategy" class="text-[13px] text-slate-700 leading-relaxed font-medium">
-                    Analisando dados táticos...
-                </p>
-            </div>
-
-            <!-- 4 INDICADORES ESSENCIAIS (Modo CRM GAP) -->
-            <div class="grid grid-cols-2 gap-3">
-                <!-- FATURAMENTO -->
-                <div class="card p-3 rounded-xl bg-es-pink border border-pink-600/20 text-white shadow-sm flex flex-col justify-between">
-                    <p class="text-[11px] font-bold mb-3 opacity-90 uppercase tracking-wide">Faturamento</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Alcançado</span>
-                            <span id="card-fat-alc" class="font-bold text-[14px]">R$ 0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Meta</span>
-                            <span id="card-fat-meta" class="font-bold text-xs">R$ 0</span>
-                        </div>
-                        <div class="pt-1">
-                            <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-[9px] font-bold uppercase text-pink-100">Evolução</span>
-                                <span id="card-fat-percent" class="font-bold text-[10px]">0%</span>
+            <!-- VIEW 2: EJ PROFILE / FORMS (Visão Micro) -->
+            <div id="ej-profile" class="absolute inset-0 bg-white z-10 hidden flex-col transition-all duration-300">
+                <!-- Topbar do Profile -->
+                <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50 shrink-0">
+                    <div class="flex items-center gap-4">
+                        <button id="btn-back" class="p-2 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors" title="Voltar ao Kanban">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        </button>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span id="profile-cluster" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded text-slate-600 bg-slate-200">Cluster 0</span>
+                                <span id="profile-farol" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded text-white bg-status-emerald">Farol</span>
+                                <span id="profile-forecast" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border border-slate-300 text-slate-600">Previsão</span>
                             </div>
-                            <div class="w-full bg-pink-900/50 rounded-full h-1.5">
-                                <div id="card-fat-progress" class="bg-white h-1.5 rounded-full" style="width: 0%"></div>
+                            <h2 id="profile-name" class="text-3xl font-heading font-extrabold text-slate-900 leading-tight">Nome da EJ</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conteúdo do Profile: Grid Split -->
+                <div class="flex-1 flex overflow-hidden">
+                    
+                    <!-- Esquerda: O Formulário / Caderno de Reuniões -->
+                    <div class="w-1/2 p-6 border-r border-slate-200 flex flex-col bg-white">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-es-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Diário de Bordo da Reunião
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Escreva pautas, feedbacks e combinados. O texto é salvo automaticamente no seu navegador.</p>
+                        
+                        <div class="flex-1 relative rounded-xl border border-slate-300 shadow-inner bg-slate-50/50 focus-within:bg-white focus-within:border-es-blue focus-within:ring-1 focus-within:ring-es-blue transition-all">
+                            <textarea id="meeting-notes" class="w-full h-full p-4 bg-transparent resize-none outline-none text-slate-700 text-sm leading-relaxed custom-scrollbar placeholder:text-slate-400" placeholder="Ex: O faturamento estagnou no último trimestre. Precisamos lançar 3 novos projetos de ticket médio X até o final do mês..."></textarea>
+                        </div>
+                        <div class="mt-2 text-right">
+                            <span class="text-[10px] text-emerald-600 font-medium flex items-center justify-end gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                Salvo Localmente
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Direita: IA e Indicadores -->
+                    <div class="w-1/2 p-6 flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar">
+                        
+                        <!-- AI Card -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 shadow-sm relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-es-blue"></div>
+                            <h4 class="text-xs font-bold text-es-blue uppercase tracking-wider mb-2 flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clip-rule="evenodd"></path></svg>
+                                Estratégia de Rede Recomendada
+                            </h4>
+                            <p id="profile-ai-text" class="text-sm text-slate-700 leading-relaxed font-medium"></p>
+                        </div>
+
+                        <!-- Grid de Metas -->
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Progresso de Metas (Tracking)</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Faturamento -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h5 class="text-xs font-bold text-slate-500 uppercase">Faturamento</h5>
+                                    <span id="card-fat-percent" class="text-xs font-bold text-es-pink bg-pink-50 px-2 py-0.5 rounded">0%</span>
+                                </div>
+                                <div class="mt-auto">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-500">Alcançado</span>
+                                        <span id="card-fat-alc" class="font-bold text-slate-800">R$ 0</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-3">
+                                        <span class="text-slate-400">Meta Anual</span>
+                                        <span id="card-fat-meta" class="font-medium text-slate-500">R$ 0</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div id="card-fat-bar" class="bg-es-pink h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CSAT -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h5 class="text-xs font-bold text-slate-500 uppercase">CSAT</h5>
+                                </div>
+                                <div class="mt-auto">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-500">Alcançado</span>
+                                        <span id="card-csat-alc" class="font-bold text-slate-800">0.0</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-3">
+                                        <span class="text-slate-400">Meta</span>
+                                        <span id="card-csat-meta" class="font-medium text-slate-500">0.0</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div id="card-csat-bar" class="bg-es-blue h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Engajamento -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h5 class="text-xs font-bold text-slate-500 uppercase">Engajamento</h5>
+                                </div>
+                                <div class="mt-auto">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-500">Alcançado</span>
+                                        <span id="card-eng-alc" class="font-bold text-slate-800">0</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-3">
+                                        <span class="text-slate-400">Meta</span>
+                                        <span id="card-eng-meta" class="font-medium text-slate-500">0</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div id="card-eng-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tempo -->
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h5 class="text-xs font-bold text-slate-500 uppercase">Tempo Permanência</h5>
+                                </div>
+                                <div class="mt-auto">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-500">Alcançado</span>
+                                        <span id="card-tempo-alc" class="font-bold text-slate-800">0</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-3">
+                                        <span class="text-slate-400">Meta</span>
+                                        <span id="card-tempo-meta" class="font-medium text-slate-500">0</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div id="card-tempo-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <!-- CSAT -->
-                <div class="card p-3 rounded-xl bg-es-pink border border-pink-600/20 text-white shadow-sm flex flex-col justify-between">
-                    <p class="text-[11px] font-bold mb-3 opacity-90 uppercase tracking-wide">CSAT</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Alcançado</span>
-                            <span id="card-csat-alc" class="font-bold text-[14px]">0.0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Meta (Escala 1-5)</span>
-                            <span id="card-csat-meta" class="font-bold text-xs">0.0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline pt-1">
-                            <span class="text-[10px] font-bold uppercase text-pink-100">GAP</span>
-                            <span id="card-csat-gap" class="font-bold text-[13px] bg-white text-es-pink px-1.5 py-0.5 rounded text-xs">0.0</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- TEMPO -->
-                <div class="card p-3 rounded-xl bg-es-pink border border-pink-600/20 text-white shadow-sm flex flex-col justify-between">
-                    <p class="text-[11px] font-bold mb-3 opacity-90 uppercase tracking-wide truncate">Tempo de Permanência</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Alcançado</span>
-                            <span id="card-tempo-alc" class="font-bold text-[14px]">0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Meta</span>
-                            <span id="card-tempo-meta" class="font-bold text-xs">0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline pt-1">
-                            <span class="text-[10px] font-bold uppercase text-pink-100">GAP</span>
-                            <span id="card-tempo-gap" class="font-bold text-[13px] bg-white text-es-pink px-1.5 py-0.5 rounded text-xs">0</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- ENGAJAMENTO -->
-                <div class="card p-3 rounded-xl bg-es-pink border border-pink-600/20 text-white shadow-sm flex flex-col justify-between">
-                    <p class="text-[11px] font-bold mb-3 opacity-90 uppercase tracking-wide truncate">Engajamento MEJ</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Alcançado</span>
-                            <span id="card-eng-alc" class="font-bold text-[14px]">0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline border-b border-white/20 pb-1">
-                            <span class="text-[10px] opacity-80">Meta</span>
-                            <span id="card-eng-meta" class="font-bold text-xs">0</span>
-                        </div>
-                        <div class="flex justify-between items-baseline pt-1">
-                            <span class="text-[10px] font-bold uppercase text-pink-100">GAP</span>
-                            <span id="card-eng-gap" class="font-bold text-[13px] bg-white text-es-pink px-1.5 py-0.5 rounded text-xs">0</span>
-                        </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- Previsibilidade (Gráfico) -->
-            <div class="card p-4 rounded-xl bg-white border border-slate-200 shadow-sm mt-2">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-sm font-semibold text-slate-800">Previsibilidade: Faturamento</h3>
-                    <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wider border border-slate-200">Linear</span>
-                </div>
-                <div class="w-full h-40">
-                    <canvas id="predictChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </aside>
+        </main>
+    </div>
 
     <script src="app.js"></script>
 </body>
