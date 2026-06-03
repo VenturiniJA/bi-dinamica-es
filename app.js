@@ -1,40 +1,54 @@
 let predictChartInstance = null;
+let currentSelectedEJId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('network-status').textContent = 'Baixando dados reais (Tracking)...';
+    document.getElementById('network-status').textContent = 'Baixando cruzamento de dados (Tracking + Farol de Cluster)...';
 
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/163X5ADTJkHXK4INVs4KPdAXveUXhz0sYEoDGIdHWdOM/export?format=csv&gid=1067661499';
+    const trackingURL = 'https://docs.google.com/spreadsheets/d/163X5ADTJkHXK4INVs4KPdAXveUXhz0sYEoDGIdHWdOM/export?format=csv&gid=1067661499';
+    const clusterURL = 'https://docs.google.com/spreadsheets/d/163X5ADTJkHXK4INVs4KPdAXveUXhz0sYEoDGIdHWdOM/export?format=csv&gid=1494647923';
 
-    fetch(sheetURL)
-        .then(response => response.text())
-        .then(text => {
-            const lines = text.split('\n');
-            lines.shift(); // Remove "Mês em Análise"
-            const cleanCSV = lines.join('\n');
+    Promise.all([
+        fetch(trackingURL).then(r => r.text()),
+        fetch(clusterURL).then(r => r.text())
+    ]).then(([trackingText, clusterText]) => {
+        // Limpar cabecalho zoado do tracking
+        const trackLines = trackingText.split('\n');
+        trackLines.shift(); // Remove "Mês em Análise"
+        const cleanTrackCSV = trackLines.join('\n');
 
-            Papa.parse(cleanCSV, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const parsedData = processTrackingData(results.data);
-                    if (!parsedData || parsedData.length === 0) {
-                        document.getElementById('network-status').textContent = 'Nenhuma EJ da Juniores encontrada.';
-                        return;
+        // Limpar cabecalho zoado do cluster
+        const clusterLines = clusterText.split('\n');
+        // A aba Farol de cluster tem as linhas: 1-11 vazias ou texto solto.
+        // O header começa na linha que tem "ID,EJ,FEDERAÇÃO" (linha 12 indexada).
+        let headerIndex = clusterLines.findIndex(l => l.includes('ID') && l.includes('EJ') && l.includes('SITUAÇÃO ATUAL'));
+        if(headerIndex === -1) headerIndex = clusterLines.findIndex(l => l.includes('SITUAÇÃO ATUAL'));
+        if(headerIndex === -1) headerIndex = 2; // Fallback
+        
+        const cleanClusterCSV = clusterLines.slice(headerIndex).join('\n');
+
+        Papa.parse(cleanTrackCSV, {
+            header: true, skipEmptyLines: true,
+            complete: function(trackResults) {
+                Papa.parse(cleanClusterCSV, {
+                    header: true, skipEmptyLines: true,
+                    complete: function(clusterResults) {
+                        const parsedData = processData(trackResults.data, clusterResults.data);
+                        if (!parsedData || parsedData.length === 0) {
+                            document.getElementById('network-status').textContent = 'Nenhuma EJ encontrada.';
+                            return;
+                        }
+                        initGlobalKPIs(parsedData);
+                        initLeftPanel(parsedData);
+                        initNetworkGraph(parsedData);
+                        setupMeetingMode();
                     }
-                    initGlobalKPIs(parsedData);
-                    initLeftPanel(parsedData);
-                    initNetworkGraph(parsedData);
-                },
-                error: function(err) {
-                    console.error("Erro ao fazer parse do CSV:", err);
-                    document.getElementById('network-status').textContent = 'Falha ao conectar no Google Sheets.';
-                }
-            });
-        })
-        .catch(err => {
-            console.error("Erro no fetch:", err);
-            document.getElementById('network-status').textContent = 'Erro ao baixar planilha.';
+                });
+            }
         });
+    }).catch(err => {
+        console.error("Erro no fetch:", err);
+        document.getElementById('network-status').textContent = 'Erro ao baixar planilhas.';
+    });
 });
 
 function cleanMoney(val) {
@@ -55,11 +69,25 @@ function moneyFmt(val) {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-function processTrackingData(rows) {
+function processData(trackRows, clusterRows) {
     const ejs = [];
-    if (rows.length === 0) return ejs;
-    const headers = Object.keys(rows[0]);
+    if (trackRows.length === 0) return ejs;
+    
+    // Map cluster data by ID
+    const clusterMap = {};
+    clusterRows.forEach(row => {
+        let id = safeFloat(row['ID']);
+        if(id > 0) {
+            clusterMap[id] = {
+                situacao: String(row['SITUAÇÃO ATUAL'] || '').trim().toUpperCase(),
+                clusterAlmejado: safeFloat(row['CLUSTER ALMEJADO']),
+                indiceAtual: cleanMoney(row['ÍNDICE ATUAL']),
+                indicePular: cleanMoney(row['ÍNDICE P/ SUBIR'])
+            };
+        }
+    });
 
+    const headers = Object.keys(trackRows[0]);
     const colID = headers.find(c => c.includes('ID'));
     const colEJ = headers.find(c => c.includes('EJ') && !c.includes('EXCELENTE'));
     const colExcelente = headers.find(c => c.includes('EJ EXCELENTE'));
@@ -78,29 +106,32 @@ function processTrackingData(rows) {
     const colMetaTempo = headers.find(c => c.includes('Meta de Tempo de Perman'));
     const colTempo = headers.find(c => c.includes('Tempo de Perman') && !c.includes('Meta'));
 
-    rows.forEach(row => {
+    trackRows.forEach(row => {
         if (String(row[colFed]).trim() !== 'Juniores') return;
         const nome = String(row[colEJ]).trim();
         if (!nome || nome.toUpperCase() === 'CONCENTRO' || nome.toUpperCase() === 'NAN') return;
 
-        // Tratar CSAT para a escala correta (muitas vezes a planilha do drive joga 50.0 ou porcentagens malucas)
         let rawCsat = safeFloat(row[colCSAT]);
-        if (rawCsat > 10) rawCsat = rawCsat / 100; // Caso venha como porcentagem no csv export (ex: 500% = 5.0)
-        if (rawCsat > 5) rawCsat = 5.0; // Hard limit para escala 1-5
+        if (rawCsat > 10) rawCsat = rawCsat / 100;
+        if (rawCsat > 5) rawCsat = 5.0;
 
         let rawMetaCsat = safeFloat(row[colMetaCSAT]);
         if (rawMetaCsat > 10) rawMetaCsat = rawMetaCsat / 100;
         if (rawMetaCsat > 5) rawMetaCsat = 5.0;
 
+        const id = safeFloat(row[colID]);
+        const clusterForecast = clusterMap[id] || { situacao: "DESCONHECIDO" };
+
         ejs.push({
-            id: safeFloat(row[colID]),
+            id: id,
             nome: nome,
             farol: String(row[colExcelente]).trim().toUpperCase(),
             cluster: safeFloat(row[colCluster]),
             faturamento: { metaAno: cleanMoney(row[colMetaFat]), alcancado: cleanMoney(row[colFatAlcan]) },
             csat: { meta: rawMetaCsat, alcancado: rawCsat },
             engajamento: { meta: safeFloat(row[colMetaEng]), alcancado: safeFloat(row[colEng]) },
-            tempo: { meta: safeFloat(row[colMetaTempo]), alcancado: safeFloat(row[colTempo]) }
+            tempo: { meta: safeFloat(row[colMetaTempo]), alcancado: safeFloat(row[colTempo]) },
+            previsao: clusterForecast
         });
     });
     return ejs;
@@ -108,31 +139,28 @@ function processTrackingData(rows) {
 
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
-    let totalCSAT = 0;
-    let csatCount = 0;
     let acCount = 0;
 
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
-        if (ej.csat && ej.csat.alcancado > 0) {
-            totalCSAT += ej.csat.alcancado;
-            csatCount++;
-        }
         if (ej.farol === "VERDE") acCount++;
     });
-
-    const avgCSAT = csatCount > 0 ? (totalCSAT / csatCount).toFixed(2) : "0.00";
     
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
-    document.getElementById("global-csat").textContent = avgCSAT;
     document.getElementById("global-ac").textContent = `${acCount} / ${dados.length}`;
+}
+
+function getSituacaoBadge(situacao) {
+    if (situacao === 'SOBE') return '<span class="text-[10px] font-bold bg-status-emerald/20 text-status-emerald px-1.5 py-0.5 rounded ml-2">↑ SOBE</span>';
+    if (situacao === 'CAI') return '<span class="text-[10px] font-bold bg-status-red/20 text-status-red px-1.5 py-0.5 rounded ml-2">↓ CAI</span>';
+    if (situacao === 'PERMANECE') return '<span class="text-[10px] font-bold bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded ml-2">= PERMANECE</span>';
+    return '';
 }
 
 function initLeftPanel(dados) {
     const listContainer = document.getElementById('cluster-list');
     listContainer.innerHTML = '';
 
-    // Agrupar por cluster
     const clusters = {};
     dados.forEach(ej => {
         const c = ej.cluster || "Sem Cluster";
@@ -148,7 +176,6 @@ function initLeftPanel(dados) {
     };
 
     Object.keys(clusters).sort().forEach(clusterKey => {
-        // Wrapper do cluster
         const clusterDiv = document.createElement('div');
         clusterDiv.className = 'mb-4';
         
@@ -164,7 +191,6 @@ function initLeftPanel(dados) {
             const card = document.createElement('div');
             card.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-es-blue/50 cursor-pointer transition-colors';
             card.onclick = () => {
-                // Focus no grafo também
                 if (window.networkInstance) {
                     window.networkInstance.selectNodes([ej.id]);
                     window.networkInstance.focus(ej.id, { scale: 1.2, animation: true });
@@ -175,10 +201,11 @@ function initLeftPanel(dados) {
             const farolColor = palette[ej.farol] || "bg-slate-300";
             
             card.innerHTML = `
-                <div class="flex items-center gap-2 truncate">
+                <div class="flex items-center gap-2 truncate flex-1">
                     <span class="w-2.5 h-2.5 rounded-full ${farolColor} shrink-0"></span>
                     <span class="text-sm font-semibold text-slate-700 truncate">${ej.nome}</span>
                 </div>
+                ${getSituacaoBadge(ej.previsao.situacao)}
             `;
             ejsList.appendChild(card);
         });
@@ -197,15 +224,13 @@ function initNetworkGraph(dados) {
 
     dados.forEach(ej => {
         let baseColor = palette[ej.farol] || "#78BCE2"; 
-        
-        // Calcular saude pra impactar o tamanho
         let gapCount = 0;
         if (ej.faturamento.alcancado < ej.faturamento.metaAno) gapCount++;
         if (ej.csat.alcancado < ej.csat.meta) gapCount++;
         if (ej.tempo.alcancado < ej.tempo.meta) gapCount++;
         if (ej.engajamento.alcancado < ej.engajamento.meta) gapCount++;
 
-        let nodeSize = 25 - (gapCount * 2); // EJs piores ficam menores/mais afundadas, EJs excelentes maiores
+        let nodeSize = 25 - (gapCount * 2); 
         if(nodeSize < 10) nodeSize = 10;
 
         nodesArray.push({
@@ -246,9 +271,7 @@ function initNetworkGraph(dados) {
         if (params.nodes.length > 0) {
             openTacticalProfile(nodes.get(params.nodes[0]).rawEJData);
         } else {
-            document.getElementById("no-selection").classList.remove("hidden");
-            document.getElementById("selection-details").classList.add("hidden");
-            document.getElementById("selection-details").classList.remove("flex");
+            closeMeetingMode();
         }
     });
 }
@@ -258,57 +281,55 @@ function generateAIStrategy(ej) {
     const fatGap = ej.faturamento.metaAno - ej.faturamento.alcancado;
     const csatGap = ej.csat.meta - ej.csat.alcancado;
 
-    // Abertura com base no Farol
-    if (ej.farol === "VERDE") insights.push(`A ${ej.nome} apresenta excelência operacional sustentável neste ciclo.`);
-    else if (ej.farol === "VERMELHO") insights.push(`A ${ej.nome} está em zona de alerta crítico no Cluster ${ej.cluster}. Intervenção tática necessária.`);
-    else if (ej.farol === "ZERADA") insights.push(`A ${ej.nome} não reportou dados suficientes. O contato de alinhamento com os líderes é a prioridade zero.`);
-    else insights.push(`A ${ej.nome} necessita de atenção focada para não perder o ritmo de atingimento das metas.`);
+    if (ej.previsao.situacao === 'CAI') {
+        insights.push(`🚨 ALERTA: A projeção indica que a ${ej.nome} irá CAIR de cluster. Foco total em recuperar os Índices e bater as metas de farol.`);
+    } else if (ej.previsao.situacao === 'SOBE') {
+        insights.push(`🚀 EXCELENTE: A projeção indica que a ${ej.nome} vai SUBIR para o Cluster ${ej.previsao.clusterAlmejado}! Apenas mantenham o ritmo atual.`);
+    } else {
+        insights.push(`A ${ej.nome} está estagnada (PERMANECE no Cluster ${ej.cluster}). É preciso alavancar o faturamento teto para pleitear o salto.`);
+    }
 
-    // Estratégia de Faturamento
     if (fatGap > 0) {
         let percent = ej.faturamento.metaAno > 0 ? ((ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
-        insights.push(`Com o GAP de ${moneyFmt(fatGap)} (${percent.toFixed(1)}% do total), o foco de curto prazo deve ser em conversão de funil e ações de tração de vendas para não sobrecarregar o final do ano.`);
+        insights.push(`Com GAP de ${moneyFmt(fatGap)} (${percent.toFixed(1)}% alcançado), a máquina de vendas precisa tracionar agora.`);
     } else {
-        insights.push(`Meta de faturamento anual assegurada! Oportunidade para a federação incentivar a EJ a testar projetos de inovação ou ticket maior.`);
+        insights.push(`A meta anual já foi atingida, cenário perfeito para projetos de inovação.`);
     }
 
-    // Estratégia de Qualidade
     if (ej.csat.alcancado === 0 && ej.csat.meta > 0) {
-        insights.push(`A coleta de CSAT está nula. Implementar rotina obrigatória de pesquisa NPS no fechamento dos projetos é crítico para blindar a operação.`);
+        insights.push(`Coleta de NPS nula. Ações de CSAT urgentes!`);
     } else if (csatGap > 0) {
-        insights.push(`O nível de satisfação (${ej.csat.alcancado.toFixed(1)}) está aquém dos ${ej.csat.meta.toFixed(1)} esperados. Rodar diagnósticos de qualidade urgentes com os clientes atuais para evitar detratores.`);
-    }
-
-    // Estratégia de Rede
-    if (ej.engajamento.alcancado < ej.engajamento.meta) {
-        insights.push(`Engajamento MEJ muito baixo (${ej.engajamento.alcancado}/${ej.engajamento.meta}). O núcleo deve atuar aproximando os membros desta EJ da cultura da federação e dos eventos estaduais.`);
+        insights.push(`CSAT de ${ej.csat.alcancado.toFixed(1)} abaixo da meta. Atenção aos detratores na execução.`);
     }
 
     return insights.join(" ");
 }
 
 function openTacticalProfile(ej) {
+    currentSelectedEJId = ej.id;
+
+    // Habilita Sidebar Direita
     document.getElementById("no-selection").classList.add("hidden");
     const details = document.getElementById("selection-details");
     details.classList.remove("hidden");
     details.classList.add("flex");
     
     // Header
-    const ejCluster = document.getElementById("ej-cluster");
-    ejCluster.textContent = `CLUSTER ${ej.cluster}`;
-    const palette = { "VERDE": "bg-status-emerald/20 text-status-emerald", "AMARELO": "bg-status-yellow/20 text-status-yellow", "VERMELHO": "bg-status-red/20 text-status-red", "ZERADA": "bg-slate-200 text-slate-500" };
-    ejCluster.className = `text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-md ${palette[ej.farol] || "bg-es-blue/10 text-es-blue"}`;
+    document.getElementById("ej-cluster").textContent = `CLUSTER ${ej.cluster}`;
     document.getElementById("ej-name").textContent = ej.nome;
-
-    // AI Strategy
     document.getElementById("ej-ai-strategy").textContent = generateAIStrategy(ej);
 
-    // 4 Metas Cards & GAPs
+    // Progresso e GAPs Faturamento
     const fatGap = Math.max(0, ej.faturamento.metaAno - ej.faturamento.alcancado);
     document.getElementById("card-fat-alc").textContent = moneyFmt(ej.faturamento.alcancado);
     document.getElementById("card-fat-meta").textContent = moneyFmt(ej.faturamento.metaAno);
     document.getElementById("card-fat-gap").textContent = fatGap > 0 ? `- ${moneyFmt(fatGap)}` : 'Meta Batida!';
+    
+    const fatPerc = ej.faturamento.metaAno > 0 ? Math.min(100, (ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
+    document.getElementById("card-fat-percent").textContent = `${fatPerc.toFixed(1)}%`;
+    document.getElementById("card-fat-progress").style.width = `${fatPerc}%`;
 
+    // Outros GAPs
     const csatGap = Math.max(0, ej.csat.meta - ej.csat.alcancado);
     document.getElementById("card-csat-alc").textContent = ej.csat.alcancado.toFixed(1);
     document.getElementById("card-csat-meta").textContent = ej.csat.meta.toFixed(1);
@@ -324,8 +345,46 @@ function openTacticalProfile(ej) {
     document.getElementById("card-eng-meta").textContent = ej.engajamento.meta;
     document.getElementById("card-eng-gap").textContent = engGap > 0 ? `- ${engGap}` : 'OK!';
 
-    // Line Chart Previsibilidade
     renderPredictChart(ej.faturamento.metaAno, ej.faturamento.alcancado, 6); 
+
+    // Modo Reunião (Abre o Diário Central)
+    const overlay = document.getElementById("meeting-overlay");
+    const canvas = document.getElementById("network-canvas");
+    document.getElementById("meeting-ej-name").textContent = ej.nome;
+    
+    // Recupera anotações do Local Storage
+    const textarea = document.getElementById("meeting-notes");
+    textarea.value = localStorage.getItem(`notas_ej_${ej.id}`) || '';
+
+    overlay.classList.remove("hidden");
+    overlay.classList.add("flex");
+    canvas.classList.add("opacity-10");
+}
+
+function closeMeetingMode() {
+    currentSelectedEJId = null;
+    document.getElementById("no-selection").classList.remove("hidden");
+    const details = document.getElementById("selection-details");
+    details.classList.add("hidden");
+    details.classList.remove("flex");
+
+    const overlay = document.getElementById("meeting-overlay");
+    const canvas = document.getElementById("network-canvas");
+    
+    overlay.classList.add("hidden");
+    overlay.classList.remove("flex");
+    canvas.classList.remove("opacity-10");
+}
+
+function setupMeetingMode() {
+    const textarea = document.getElementById("meeting-notes");
+    textarea.addEventListener("input", (e) => {
+        if (currentSelectedEJId) {
+            localStorage.setItem(`notas_ej_${currentSelectedEJId}`, e.target.value);
+        }
+    });
+
+    document.getElementById("btn-close-meeting").addEventListener("click", closeMeetingMode);
 }
 
 function renderPredictChart(metaTotalAno, alcancadoJunho, mesAtualIndex) {
@@ -347,7 +406,7 @@ function renderPredictChart(metaTotalAno, alcancadoJunho, mesAtualIndex) {
             labels: months,
             datasets: [
                 {
-                    label: 'Faturamento Alcançado',
+                    label: 'Fat. Alcançado',
                     data: alcancadoData,
                     borderColor: '#10b981', 
                     backgroundColor: '#10b981',
