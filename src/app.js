@@ -3,22 +3,105 @@
 let predictChartInstance = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    fetch('db.json')
-        .then(response => response.json())
-        .then(data => {
-            if (!data || data.length === 0) {
-                console.error("Nenhum dado encontrado no db.json");
+    document.getElementById('network-status').textContent = 'Baixando dados reais (Tracking)...';
+
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/163X5ADTJkHXK4INVs4KPdAXveUXhz0sYEoDGIdHWdOM/export?format=csv&gid=1067661499';
+
+    Papa.parse(sheetURL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const parsedData = processTrackingData(results.data);
+            if (!parsedData || parsedData.length === 0) {
+                document.getElementById('network-status').textContent = 'Nenhuma EJ da Juniores encontrada.';
                 return;
             }
-            initGlobalKPIs(data);
-            initCharts(data);
-            initNetworkGraph(data);
-        })
-        .catch(error => {
-            console.error("Erro ao carregar os dados:", error);
-            document.getElementById('network-status').textContent = 'Falha ao carregar db.json';
-        });
+            initGlobalKPIs(parsedData);
+            initCharts(parsedData);
+            initNetworkGraph(parsedData);
+        },
+        error: function(err) {
+            console.error("Erro ao carregar o CSV:", err);
+            document.getElementById('network-status').textContent = 'Falha ao conectar no Google Sheets.';
+        }
+    });
 });
+
+function cleanMoney(val) {
+    if (!val) return 0.0;
+    const cleaned = String(val).replace('R$', '').replaceAll('.', '').replace(',', '.').trim();
+    const floatVal = parseFloat(cleaned);
+    return isNaN(floatVal) ? 0.0 : floatVal;
+}
+
+function safeFloat(val) {
+    if (!val) return 0.0;
+    const floatVal = parseFloat(String(val).replace(',', '.'));
+    return isNaN(floatVal) ? 0.0 : floatVal;
+}
+
+function processTrackingData(rows) {
+    const ejs = [];
+
+    // Localizar as colunas exatas pelas substrings como fizemos no Python para segurança de charset
+    if (rows.length === 0) return ejs;
+    const headers = Object.keys(rows[0]);
+
+    const colID = headers.find(c => c.includes('ID'));
+    const colEJ = headers.find(c => c.includes('EJ') && !c.includes('EXCELENTE'));
+    const colExcelente = headers.find(c => c.includes('EJ EXCELENTE'));
+    const colCluster = headers.find(c => c.includes('Cluster') && !c.includes('Farol'));
+    const colFed = headers.find(c => c.includes('Federa'));
+
+    const colMetaFat = headers.find(c => c.includes('Meta de Faturamento'));
+    const colFatAlcan = headers.find(c => c.includes('Faturamento') && c.includes('Alcan'));
+    const colMetaMes = headers.find(c => c.includes('Meta do M'));
+
+    const colMetaCSAT = headers.find(c => c.includes('META de CSAT'));
+    const colCSAT = headers.find(c => c.includes('CSAT') && !c.includes('META') && !c.includes('%'));
+
+    const colMetaEng = headers.find(c => c.includes('Meta de Engajamento'));
+    const colEng = headers.find(c => c.includes('Engajamento com o MEJ') && !c.includes('Meta'));
+
+    const colMetaTempo = headers.find(c => c.includes('Meta de Tempo de Perman'));
+    const colTempo = headers.find(c => c.includes('Tempo de Perman') && !c.includes('Meta'));
+
+    rows.forEach(row => {
+        // Filtrar apenas Juniores e ignorar Concentro
+        if (String(row[colFed]).trim() !== 'Juniores') return;
+        
+        const nome = String(row[colEJ]).trim();
+        if (!nome || nome.toUpperCase() === 'CONCENTRO' || nome.toUpperCase() === 'NAN') return;
+
+        ejs.push({
+            id: safeFloat(row[colID]),
+            nome: nome,
+            farol: String(row[colExcelente]).trim().toUpperCase(),
+            cluster: safeFloat(row[colCluster]),
+            faturamento: {
+                metaAno: cleanMoney(row[colMetaFat]),
+                alcancado: cleanMoney(row[colFatAlcan]),
+                metaMes: cleanMoney(row[colMetaMes])
+            },
+            csat: {
+                meta: safeFloat(row[colMetaCSAT]),
+                alcancado: safeFloat(row[colCSAT])
+            },
+            engajamento: {
+                meta: safeFloat(row[colMetaEng]),
+                alcancado: safeFloat(row[colEng])
+            },
+            tempo: {
+                meta: safeFloat(row[colMetaTempo]),
+                alcancado: safeFloat(row[colTempo])
+            },
+            summary: "Conexão Local (Web Fetch). Resumos de PDF não estão disponíveis neste modo estático."
+        });
+    });
+
+    return ejs;
+}
 
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
