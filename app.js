@@ -162,6 +162,8 @@ function getClusterFromIndice(indice) {
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
     let saldoEvolucao = 0;
+    let countVerde = 0, countAmarelo = 0, countVermelho = 0, countZerada = 0;
+    
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
         let cAtual = parseInt(ej.cluster);
@@ -169,7 +171,14 @@ function initGlobalKPIs(dados) {
         if(!isNaN(cAtual) && !isNaN(cPrevisto)) {
             saldoEvolucao += (cPrevisto - cAtual);
         }
+
+        let farol = String(ej.farol).trim().toUpperCase();
+        if(farol === "VERDE" || farol === "EXCELENTE") countVerde++;
+        else if(farol === "AMARELO" || farol === "ATENÇÃO") countAmarelo++;
+        else if(farol === "VERMELHO" || farol === "ALERTA") countVermelho++;
+        else countZerada++;
     });
+    
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
     
     let saldoEl = document.getElementById("global-ac");
@@ -177,6 +186,11 @@ function initGlobalKPIs(dados) {
     if(saldoEvolucao > 0) saldoEl.className = "text-2xl font-bold text-status-emerald";
     else if(saldoEvolucao < 0) saldoEl.className = "text-2xl font-bold text-status-red";
     else saldoEl.className = "text-2xl font-bold text-slate-900";
+
+    document.getElementById("count-verde").textContent = countVerde;
+    document.getElementById("count-amarelo").textContent = countAmarelo;
+    document.getElementById("count-vermelho").textContent = countVermelho;
+    document.getElementById("count-zerada").textContent = countZerada;
 }
 
 const PALETTE = {
@@ -294,29 +308,55 @@ function initLeftPanel(dados) {
 }
 
 function renderKanban(dados) {
-    const colSobe = document.getElementById('kanban-sobe');
-    const colPerm = document.getElementById('kanban-permanece');
-    const colCai = document.getElementById('kanban-cai');
-
-    colSobe.innerHTML = ''; colPerm.innerHTML = ''; colCai.innerHTML = '';
+    const tbody = document.getElementById("dashboard-table-body");
+    if (!tbody) return;
+    tbody.innerHTML = '';
     
-    let countSobe = 0, countPerm = 0, countCai = 0;
-
-    // Ordenar por gap financeiro ou ordem alfabetica
-    const sorted = [...dados].sort((a,b) => a.nome.localeCompare(b.nome));
-
-    sorted.forEach(ej => {
-        const sit = ej.previsao.situacao;
-        const card = createMiniCard(ej);
-        
-        if (sit === 'SOBE') { colSobe.appendChild(card); countSobe++; }
-        else if (sit === 'CAI') { colCai.appendChild(card); countCai++; }
-        else { colPerm.appendChild(card); countPerm++; }
+    const sorted = [...dados].sort((a,b) => {
+        if(a.cluster !== b.cluster) return b.cluster - a.cluster;
+        return a.nome.localeCompare(b.nome);
     });
 
-    document.getElementById('count-sobe').textContent = countSobe;
-    document.getElementById('count-permanece').textContent = countPerm;
-    document.getElementById('count-cai').textContent = countCai;
+    const farolColorMap = {
+        "VERDE": "bg-status-emerald", "EXCELENTE": "bg-status-emerald",
+        "AMARELO": "bg-status-yellow", "ATENÇÃO": "bg-status-yellow",
+        "VERMELHO": "bg-status-red", "ALERTA": "bg-status-red",
+        "ZERADA": "bg-slate-400"
+    };
+
+    const sitMap = {
+        "SOBE": "bg-emerald-100 text-emerald-700 border-emerald-200",
+        "CAI": "bg-red-100 text-red-700 border-red-200",
+        "PERMANECE": "bg-slate-200 text-slate-700 border-slate-300"
+    };
+
+    sorted.forEach(ej => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 cursor-pointer transition-colors group";
+        tr.onclick = () => openTacticalProfile(ej);
+        
+        let fColor = farolColorMap[ej.farol] || 'bg-slate-400';
+        let sitClass = sitMap[ej.previsao.situacao] || sitMap["PERMANECE"];
+        
+        tr.innerHTML = `
+            <td class="py-4 px-4 font-bold text-slate-800 text-sm group-hover:text-es-blue transition-colors">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full ${fColor}"></span>
+                    ${ej.nome}
+                </div>
+            </td>
+            <td class="py-4 px-4 text-sm text-slate-600 text-center">C${ej.cluster}</td>
+            <td class="py-4 px-4 text-center">
+                <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded text-white ${fColor}">${ej.farol}</span>
+            </td>
+            <td class="py-4 px-4 text-sm font-medium text-slate-700 text-right">${moneyFmt(ej.faturamento.alcancado)}</td>
+            <td class="py-4 px-4 text-sm font-medium text-slate-700 text-center">${ej.csat.alcancado}</td>
+            <td class="py-4 px-4 text-center">
+                <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border ${sitClass}">${ej.previsao.situacao}</span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function setupEvents() {

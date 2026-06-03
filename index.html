@@ -57,6 +57,25 @@
                     <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Saldo de Evolução Atual</p>
                     <p id="global-ac" class="text-2xl font-bold text-slate-900">0</p>
                 </div>
+                <!-- Contadores Farol -->
+                <div class="flex items-center gap-4 border-l border-slate-200 pl-6">
+                    <div class="text-center">
+                        <p class="text-[10px] text-status-emerald font-bold uppercase tracking-wider mb-1">Verde</p>
+                        <p id="count-verde" class="text-xl font-bold text-status-emerald">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] text-status-yellow font-bold uppercase tracking-wider mb-1">Amarelo</p>
+                        <p id="count-amarelo" class="text-xl font-bold text-status-yellow">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] text-status-red font-bold uppercase tracking-wider mb-1">Vermelho</p>
+                        <p id="count-vermelho" class="text-xl font-bold text-status-red">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Zeradas</p>
+                        <p id="count-zerada" class="text-xl font-bold text-slate-400">0</p>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -71,61 +90,34 @@
             <div id="cluster-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
                 <!-- Lista injetada aqui -->
             </div>
-            <div class="p-4 border-t border-slate-200 bg-slate-50">
-                <h4 class="text-[10px] text-slate-500 font-bold uppercase mb-2">Legenda de Farol</h4>
-                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-emerald"></span> Excelente</div>
-                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-yellow"></span> Atenção</div>
-                <div class="flex items-center gap-2 text-xs mb-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-status-red"></span> Alerta</div>
-                <div class="flex items-center gap-2 text-xs text-slate-700"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Zerada</div>
-            </div>
         </aside>
 
         <!-- Main Workspace (Direita) -->
         <main class="flex-1 bg-slate-50/50 flex flex-col relative overflow-hidden">
             
-            <!-- VIEW 1: KANBAN DASHBOARD (Visão Macro) -->
+            <!-- VIEW 1: DATA TABLE DASHBOARD (Visão Macro) -->
             <div id="crm-dashboard" class="absolute inset-0 flex flex-col p-6 overflow-hidden transition-all duration-300">
                 <div class="mb-6">
-                    <h2 class="text-2xl font-heading font-bold text-slate-800">Quadro de Previsibilidade</h2>
-                    <p class="text-sm text-slate-500 mt-1">Acompanhe as EJs agrupadas pela projeção de salto ou queda de cluster.</p>
+                    <h2 class="text-2xl font-heading font-bold text-slate-800">Visão da Rede</h2>
+                    <p class="text-sm text-slate-500 mt-1">Acompanhe o desempenho, faturamento e projeção de cada Empresa Júnior.</p>
                 </div>
                 
-                <div class="flex-1 flex gap-6 overflow-x-auto custom-scrollbar pb-4">
-                    <!-- Coluna SOBE -->
-                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
-                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
-                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-                                <span class="bg-emerald-100 text-emerald-700 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg></span>
-                                SOBEM DE CLUSTER
-                            </h3>
-                            <span id="count-sobe" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="kanban-sobe" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
-                    </div>
-
-                    <!-- Coluna PERMANECE -->
-                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
-                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
-                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-                                <span class="bg-slate-200 text-slate-600 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16"></path></svg></span>
-                                PERMANECEM
-                            </h3>
-                            <span id="count-permanece" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="kanban-permanece" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
-                    </div>
-
-                    <!-- Coluna CAI -->
-                    <div class="flex-1 min-w-[300px] flex flex-col bg-slate-100 rounded-xl border border-slate-200/60 max-h-full">
-                        <div class="p-3 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
-                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-                                <span class="bg-red-100 text-red-600 p-1 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg></span>
-                                RISCO DE QUEDA
-                            </h3>
-                            <span id="count-cai" class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="kanban-cai" class="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"></div>
-                    </div>
+                <div class="flex-1 overflow-auto custom-scrollbar bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 z-10">
+                            <tr>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Empresa Júnior</th>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Cluster</th>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Farol</th>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Faturamento</th>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">CSAT</th>
+                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Situação (Ano)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-table-body" class="divide-y divide-slate-100">
+                            <!-- Rows injetadas aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
