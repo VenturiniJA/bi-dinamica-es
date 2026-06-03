@@ -301,31 +301,66 @@ function formatM(val) {
 
 function generateAIStrategy(ej) {
     let insights = [];
-    const fatGap = ej.faturamento.metaAno - ej.faturamento.alcancado;
-    const fatPerc = ej.faturamento.metaAno > 0 ? ((ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
     
-    // Análise de Curto Prazo (Tracking) vs Longo Prazo (Cluster)
-    let hasFatVerde = fatPerc >= 100;
+    let kpisProblematicos = [];
+    let kpisExcelentes = [];
+    
+    // Análise de Faturamento
+    let fatPerc = ej.faturamento.metaAno > 0 ? ((ej.faturamento.alcancado / ej.faturamento.metaAno) * 100) : 0;
+    if (fatPerc < 100) kpisProblematicos.push(`Faturamento (GAP ${moneyFmt(ej.faturamento.metaAno - ej.faturamento.alcancado)})`);
+    else kpisExcelentes.push('Faturamento');
 
-    if (ej.previsao.situacao === 'CAI') {
-        if (hasFatVerde) {
-            insights.push(`🚨 ALERTA DE QUEDA: Embora a ${ej.nome} esteja Verde no Tracking de Faturamento atual (${fatPerc.toFixed(1)}%), a sua projeção de final de ano (Índice Previsto de ${formatM(ej.previsao.indicePrevisto)}) não alcança sequer a nota de corte para se manter no Cluster ${ej.cluster} (Mínimo de ${formatM(ej.previsao.indiceMinimo)}).`);
-            insights.push(`O foco total deve ser alavancar o faturamento além da meta estipulada para salvar o Índice de Cluster.`);
-        } else {
-            insights.push(`🚨 ALERTA: A projeção atual indica que a ${ej.nome} está em RISCO DE QUEDA de Cluster. É obrigatório recuperar o Farol Verde batendo as metas de curto prazo.`);
-            insights.push(`Existe um GAP financeiro de ${moneyFmt(fatGap)} que afunda o Índice Previsto para ${formatM(ej.previsao.indicePrevisto)}.`);
-        }
-    } else if (ej.previsao.situacao === 'SOBE') {
-        insights.push(`🚀 EXCELENTE: A projeção aponta que a ${ej.nome} VAI SUBIR para o Cluster ${ej.previsao.clusterAlmejado}! O Índice Previsto (${formatM(ej.previsao.indicePrevisto)}) já ultrapassa a meta de salto (${formatM(ej.previsao.indicePular)}). O momento é de tracionar para blindar esse resultado.`);
-    } else {
-        if (hasFatVerde) {
-            insights.push(`Estabilidade: A ${ej.nome} bateu o Faturamento do mês e se MANTÉM no Cluster ${ej.cluster}. Para sonhar com o salto, é necessário escalar o ticket médio e puxar o Índice de ${formatM(ej.previsao.indicePrevisto)} para o alvo de ${formatM(ej.previsao.indicePular)}.`);
-        } else {
-            insights.push(`Estabilidade em Risco: A ${ej.nome} se MANTÉM no Cluster ${ej.cluster}, porém possui um gap financeiro de ${moneyFmt(fatGap)}. Bater a meta é vital para não correr risco de queda no próximo trimestre.`);
-        }
+    // Análise de CSAT
+    if (ej.csat.meta > 0) {
+        if (ej.csat.alcancado < ej.csat.meta) kpisProblematicos.push(`CSAT (${ej.csat.alcancado.toFixed(1)} de ${ej.csat.meta.toFixed(1)})`);
+        else kpisExcelentes.push('CSAT');
     }
 
-    return insights.join(" ");
+    // Análise de Engajamento
+    if (ej.engajamento.meta > 0) {
+        if (ej.engajamento.alcancado < ej.engajamento.meta) kpisProblematicos.push(`Engajamento MEJ (${ej.engajamento.alcancado})`);
+        else kpisExcelentes.push('Engajamento');
+    }
+
+    // Análise de Tempo de Permanência
+    if (ej.tempo.meta > 0) {
+        if (ej.tempo.alcancado < ej.tempo.meta) kpisProblematicos.push(`Tempo de Permanência (${ej.tempo.alcancado})`);
+        else kpisExcelentes.push('Tempo de Permanência');
+    }
+
+    // Parte 1: Situação do Mês (Curto Prazo)
+    if (kpisProblematicos.length === 0) {
+        insights.push(`🔥 MÊS EXCELENTE: A EJ bateu todas as metas de curto prazo (${kpisExcelentes.join(", ")}).`);
+    } else {
+        insights.push(`📊 FOCO DO MÊS: Ações imediatas devem ser tomadas nos seguintes indicadores numéricos que estão travando a evolução mensal: ${kpisProblematicos.join("; ")}.`);
+    }
+
+    // Parte 2: Projeção de Longo Prazo (Cluster)
+    if (ej.previsao.situacao === 'CAI') {
+        insights.push(`🚨 ALERTA DE QUEDA: A projeção anual (Índice de ${formatM(ej.previsao.indicePrevisto)}) não atinge a nota de corte para se manter no Cluster ${ej.cluster} (Mínimo de ${formatM(ej.previsao.indiceMinimo)}). Alavancar resultados acima das metas traçadas é urgente.`);
+    } else if (ej.previsao.situacao === 'SOBE') {
+        insights.push(`🚀 TRAÇÃO DE SUBIDA: O Índice Previsto (${formatM(ej.previsao.indicePrevisto)}) ultrapassa a nota de corte para salto de Cluster (${formatM(ej.previsao.indicePular)}). O objetivo estratégico de longo prazo é não desacelerar a máquina de vendas.`);
+    } else {
+        insights.push(`⚖️ ESTABILIDADE: A projeção de Índice (${formatM(ej.previsao.indicePrevisto)}) garante a manutenção no Cluster ${ej.cluster}. Há um gap para alcançar os ${formatM(ej.previsao.indicePular)} necessários para subir no fim do ano.`);
+    }
+
+    // Parte 3: Dica Pragmática Baseada nas Dores do Cluster (Substituindo dicas genéricas)
+    let c = parseInt(ej.cluster);
+    if (c === 1) {
+        insights.push("💡 ATAQUE PRAGMÁTICO (CL 1): A maior dor neste cluster é a ausência de funil de vendas. Focar em Ligações e Prospecção Ativa diária é a chave. O engajamento baixo se resolve alocando os membros em projetos rapidamente.");
+    } else if (c === 2) {
+        insights.push("💡 ATAQUE PRAGMÁTICO (CL 2): Vendas pontuais e de baixo ticket travam o avanço para o C3. O foco principal deve ser a captação de leads constantes via Inbound Marketing e estruturação de um portfólio de ticket levemente maior.");
+    } else if (c === 3) {
+        insights.push("💡 ATAQUE PRAGMÁTICO (CL 3): A dor central do C3 é a Retenção e a Qualidade de Entrega. Com mais projetos rodando, o CSAT cai e os membros saem. É urgente estruturar um setor de Sucesso do Cliente (CS) e investir em PDI (Plano de Desenvolvimento Individual).");
+    } else if (c === 4) {
+        insights.push("💡 ATAQUE PRAGMÁTICO (CL 4): Estagnação comercial. Para pular pro topo (C5), a EJ deve parar de focar em alto volume de pequenos projetos e iniciar o ataque a Contratos B2B longos e serviços de altíssimo Ticket Médio. Participação na Federação conta muito.");
+    } else if (c === 5) {
+        insights.push("💡 ATAQUE PRAGMÁTICO (CL 5): O desafio do topo é a Inovação. É dificílimo manter altos percentuais de crescimento com metodologias tradicionais. Explorar novos mercados regionais, produtos escaláveis recorrentes e garantir NPS Promotor nos clientes chave.");
+    } else {
+        insights.push("💡 ATAQUE PRAGMÁTICO: Estruture planos de ação focados nos gargalos do mês.");
+    }
+
+    return insights.join(" <br><br> ");
 }
 
 function fillProgressCard(idPrefix, alcancado, meta, formatter = (v) => v, isReverse = false) {
