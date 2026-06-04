@@ -11,46 +11,73 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch(trackingURL).then(r => r.text()),
         fetch(clusterURL).then(r => r.text())
     ]).then(([trackingText, clusterText]) => {
-        // Limpar cabecalho do tracking
-        const trackLines = trackingText.split('\n');
-        trackLines.shift(); // Remove "Mês em Análise"
-        const cleanTrackCSV = trackLines.join('\n');
-
-        // Limpar cabecalho do cluster
-        const clusterLines = clusterText.split('\n');
-        let headerIndex = clusterLines.findIndex(l => l.includes('ID') && l.includes('EJ') && l.includes('SITUAÇÃO ATUAL'));
-        if(headerIndex === -1) headerIndex = clusterLines.findIndex(l => l.includes('SITUAÇÃO ATUAL'));
-        if(headerIndex === -1) headerIndex = 2; // Fallback
-        const cleanClusterCSV = clusterLines.slice(headerIndex).join('\n');
-
-        Papa.parse(cleanTrackCSV, {
-            header: true, skipEmptyLines: true,
-            complete: function(trackResults) {
-                Papa.parse(cleanClusterCSV, {
-                    header: true, skipEmptyLines: true,
-                    complete: function(clusterResults) {
-                        allEJs = processData(trackResults.data, clusterResults.data);
-                        if (!allEJs || allEJs.length === 0) {
-                            document.getElementById('network-status').textContent = 'Nenhuma EJ encontrada.';
-                            return;
-                        }
-                        
-                        document.getElementById('network-status').textContent = 'CRM Atualizado';
-                        setTimeout(() => { document.getElementById('network-status').style.display = 'none'; }, 2000);
-
-                        initGlobalKPIs(allEJs);
-                        initLeftPanel(allEJs);
-                        renderKanban(allEJs);
-                        setupEvents();
-                    }
-                });
-            }
-        });
+        processCSVTexts(trackingText, clusterText);
     }).catch(err => {
         console.error("Erro no fetch:", err);
         document.getElementById('network-status').textContent = 'Erro de Conexão.';
     });
 });
+
+window.processLocalFiles = function() {
+    const fileTrack = document.getElementById('upload-tracking').files[0];
+    const fileFarol = document.getElementById('upload-farol').files[0];
+    
+    if (!fileTrack || !fileFarol) {
+        alert("Por favor, selecione ambos os arquivos CSV (Tracking e Farol).");
+        return;
+    }
+    
+    document.getElementById('network-status').style.display = 'block';
+    document.getElementById('network-status').textContent = 'Processando arquivos locais...';
+
+    Promise.all([
+        fileTrack.text(),
+        fileFarol.text()
+    ]).then(([trackingText, clusterText]) => {
+        processCSVTexts(trackingText, clusterText);
+    }).catch(err => {
+        console.error(err);
+        alert("Erro ao ler os arquivos locais.");
+    });
+};
+
+function processCSVTexts(trackingText, clusterText) {
+    // Limpar cabecalho do tracking
+    const trackLines = trackingText.split('\n');
+    trackLines.shift(); // Remove "Mês em Análise"
+    const cleanTrackCSV = trackLines.join('\n');
+
+    // Limpar cabecalho do cluster
+    const clusterLines = clusterText.split('\n');
+    let headerIndex = clusterLines.findIndex(l => l.includes('ID') && l.includes('EJ') && l.includes('SITUAÇÃO ATUAL'));
+    if(headerIndex === -1) headerIndex = clusterLines.findIndex(l => l.includes('SITUAÇÃO ATUAL'));
+    if(headerIndex === -1) headerIndex = 2; // Fallback
+    const cleanClusterCSV = clusterLines.slice(headerIndex).join('\n');
+
+    Papa.parse(cleanTrackCSV, {
+        header: true, skipEmptyLines: true,
+        complete: function(trackResults) {
+            Papa.parse(cleanClusterCSV, {
+                header: true, skipEmptyLines: true,
+                complete: function(clusterResults) {
+                    allEJs = processData(trackResults.data, clusterResults.data);
+                    if (!allEJs || allEJs.length === 0) {
+                        document.getElementById('network-status').textContent = 'Nenhuma EJ encontrada.';
+                        return;
+                    }
+                    
+                    document.getElementById('network-status').textContent = 'CRM Atualizado';
+                    setTimeout(() => { document.getElementById('network-status').style.display = 'none'; }, 2000);
+
+                    initGlobalKPIs(allEJs);
+                    initLeftPanel(allEJs);
+                    renderKanban(allEJs);
+                    setupEvents();
+                }
+            });
+        }
+    });
+}
 
 function cleanMoney(val) {
     if (!val) return 0.0;
@@ -122,22 +149,25 @@ function processData(trackRows, clusterRows) {
         const nome = String(row[colEJ]).trim();
         if (!nome || nome.toUpperCase() === 'CONCENTRO' || nome.toUpperCase() === 'NAN') return;
 
-        let rawCsat = safeFloat(row[colCSAT]);
-        if (rawCsat > 10) rawCsat = rawCsat / 100;
-        if (rawCsat > 5) rawCsat = 5.0;
+        const id = safeFloat(row[colID]);
 
+        let clusterForecast = clusterMapById[id] || clusterMapByName[nome.toLowerCase()] || { situacao: "PERMANECE" };
+
+        let rawCsat = safeFloat(row[colCSAT]);
+        if (rawCsat > 5) {
+            rawCsat = (rawCsat / 100) * 5; // Converter de 0-100% para 1-5
+        }
+        
         let rawMetaCsat = safeFloat(row[colMetaCSAT]);
         if (rawMetaCsat > 10) rawMetaCsat = rawMetaCsat / 100;
         if (rawMetaCsat > 5) rawMetaCsat = 5.0;
 
-        const id = safeFloat(row[colID]);
-        
-        // Cruzamento
-        let clusterForecast = clusterMapById[id] || clusterMapByName[nome.toLowerCase()] || { situacao: "PERMANECE" };
-
         let metaCsatFinal = rawMetaCsat > 0 ? rawMetaCsat : 3.5;
         let metaEngFinal = safeFloat(row[colMetaEng]) > 0 ? safeFloat(row[colMetaEng]) : 75;
         let metaTempoFinal = safeFloat(row[colMetaTempo]) > 0 ? safeFloat(row[colMetaTempo]) : 50;
+        
+        // Se a CSAT for 0, garantimos o teto minimo 3.5
+        if (rawCsat === 0) rawCsat = 3.5;
 
         ejs.push({
             id: id,
@@ -166,14 +196,9 @@ function getClusterFromIndice(indice) {
 function initGlobalKPIs(dados) {
     let totalRevenue = 0;
     let countVerde = 0, countAmarelo = 0, countVermelho = 0, countZerada = 0;
-    let countSobe = 0, countCai = 0;
     
     dados.forEach(ej => {
         totalRevenue += ej.faturamento.alcancado || 0;
-        
-        let sit = ej.previsao.situacao;
-        if(sit === 'SOBE') countSobe++;
-        if(sit === 'CAI') countCai++;
 
         let farol = String(ej.farol).trim().toUpperCase();
         if(farol === "VERDE" || farol === "EXCELENTE") countVerde++;
@@ -182,7 +207,8 @@ function initGlobalKPIs(dados) {
         else countZerada++;
     });
     
-    let saldoEvolucao = countSobe - countCai;
+    // Conforme layout/demanda: Saldo de Evolução da Rede
+    let saldoEvolucao = countVerde - (countVermelho + countZerada);
 
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
     
