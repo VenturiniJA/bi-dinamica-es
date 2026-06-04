@@ -312,9 +312,9 @@ window.updateStrategyFor = function(kpiType) {
     }
 
     // Adiciona botão para voltar à visão geral
-    text += `<br><br><button onclick="document.getElementById('strategy-text').innerHTML = generateAIStrategy(allEJs.find(e => e.id === currentSelectedEJId))" class="text-xs text-es-blue hover:text-es-pink font-bold mt-2">← Voltar para Análise Holística</button>`;
+    text += `<br><br><button onclick="document.getElementById('profile-ai-text').innerHTML = generateAIStrategy(allEJs.find(e => e.id === currentSelectedEJId))" class="text-xs text-es-blue hover:text-es-pink font-bold mt-2">← Voltar para Análise Holística</button>`;
 
-    document.getElementById("strategy-text").innerHTML = text;
+    document.getElementById("profile-ai-text").innerHTML = text;
 }
 
 function initLeftPanel(dados) {
@@ -576,7 +576,7 @@ function openTacticalProfile(ej) {
     document.getElementById("profile-forecast").textContent = `PREVISÃO: ${ej.previsao.situacao}`;
 
     // AI
-    document.getElementById('strategy-text').innerHTML = generateAIStrategy(ej);
+    document.getElementById('profile-ai-text').innerHTML = generateAIStrategy(ej);
 
     // Calculadora de Cluster
     const min = ej.previsao.indiceMinimo || 0;
