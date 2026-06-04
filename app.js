@@ -614,86 +614,10 @@ function openTacticalProfile(ej) {
     let tempPerc = ej.tempo.meta > 0 ? (ej.tempo.alcancado / ej.tempo.meta) * 100 : 0;
     if(tempPerc > 100) tempPerc = 100;
 
-    document.getElementById("kpi-container").innerHTML = `
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('faturamento')">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Faturamento</p>
-                    <span class="text-xs font-bold text-es-blue bg-es-blue/10 px-2 py-0.5 rounded">${distPerc.toFixed(1)}% do Índice</span>
-                </div>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
-                        <p class="text-sm font-bold text-slate-800">${moneyFmt(ej.faturamento.alcancado)}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-slate-400 mb-1">Meta Anual</p>
-                        <p class="text-sm font-bold text-slate-800">${moneyFmt(ej.faturamento.metaAno)}</p>
-                    </div>
-                </div>
-                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-es-pink" style="width: ${distPerc}%;"></div>
-                </div>
-            </div>
-            
-            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('csat')">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">CSAT</p>
-                </div>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.csat.alcancado}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-slate-400 mb-1">Meta</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.csat.meta}</p>
-                    </div>
-                </div>
-                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-es-pink" style="width: ${csatPerc}%;"></div>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('engajamento')">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Engajamento</p>
-                </div>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.engajamento.alcancado}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-slate-400 mb-1">Meta</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.engajamento.meta}</p>
-                    </div>
-                </div>
-                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-es-pink" style="width: ${engPerc}%;"></div>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded border border-slate-200 cursor-pointer hover:border-es-pink transition-colors shadow-sm group" onclick="updateStrategyFor('tempo')">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] font-bold text-slate-500 tracking-wider uppercase group-hover:text-es-pink transition-colors">Tempo Permanência</p>
-                </div>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-xs text-slate-400 mb-1">Alcançado</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.tempo.alcancado}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-slate-400 mb-1">Meta</p>
-                        <p class="text-sm font-bold text-slate-800">${ej.tempo.meta}</p>
-                    </div>
-                </div>
-                <div class="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-es-pink" style="width: ${tempPerc}%;"></div>
-                </div>
-            </div>
-        </div>
-    `;
+    fillProgressCard('fat', ej.faturamento.alcancado, ej.faturamento.metaAno, moneyFmt);
+    fillProgressCard('csat', ej.csat.alcancado, ej.csat.meta);
+    fillProgressCard('eng', ej.engajamento.alcancado, ej.engajamento.meta);
+    fillProgressCard('tempo', ej.tempo.alcancado, ej.tempo.meta);
 
     // Diário de Bordo
     const textarea = document.getElementById("meeting-notes");

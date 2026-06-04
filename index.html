@@ -30,6 +30,20 @@
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen overflow-hidden flex flex-col font-sans selection:bg-es-pink selection:text-white">
 
+    <div class="bg-es-blue text-white text-xs px-4 py-2 flex justify-between items-center z-50 shadow-md shrink-0">
+        <div class="flex gap-4 items-center">
+            <label class="cursor-pointer font-semibold hover:text-es-pink transition">
+                📂 Anexar Tracking
+                <input type="file" id="upload-tracking" accept=".csv" class="hidden">
+            </label>
+            <label class="cursor-pointer font-semibold hover:text-es-pink transition">
+                📂 Anexar Farol
+                <input type="file" id="upload-farol" accept=".csv" class="hidden">
+            </label>
+            <button onclick="processLocalFiles()" class="bg-es-pink text-white px-3 py-1 rounded font-bold hover:bg-pink-600 transition shadow">🚀 Processar Local</button>
+        </div>
+    </div>
+
     <!-- Header Principal -->
     <header class="glass-header border-b border-slate-200 px-6 py-4 flex justify-between items-center z-30 shrink-0 shadow-sm">
         <div class="flex items-center gap-4">
