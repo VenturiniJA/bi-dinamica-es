@@ -164,7 +164,7 @@ window.initGlobalKPIs = function(dados) {
     let totalRevenue = 0;
     let countVerde = 0, countAmarelo = 0, countVermelho = 0, countZerada = 0;
     
-    const PESOS_CLUSTER = { 1: 0.30, 2: 0.25, 3: 0.20, 4: 0.15, 5: 0.10 };
+    const PESOS_CLUSTER = { 1: 3.0, 2: 2.5, 3: 1.5, 4: 1.5, 5: 1.5 };
 
     let saldoEvolucao = 0;
     let sobe = 0, cai = 0, perm = 0;
@@ -191,10 +191,10 @@ window.initGlobalKPIs = function(dados) {
         somaTempo += ej.tempo.alcancado || 0;
     });
 
-    let saldoEvolucaoFinal = (saldoEvolucao * 100).toFixed(0);
+    let saldoEvolucaoFinal = parseFloat(saldoEvolucao.toFixed(1));
 
     document.getElementById('global-revenue').textContent = moneyFmt(totalRevenue);
-    document.getElementById('global-ac').textContent = saldoEvolucaoFinal > 0 ? `+${saldoEvolucaoFinal}%` : `${saldoEvolucaoFinal}%`;
+    document.getElementById('global-ac').textContent = saldoEvolucaoFinal > 0 ? `+${saldoEvolucaoFinal}` : `${saldoEvolucaoFinal}`;
     
     let saldoEl = document.getElementById('global-ac');
     if(saldoEvolucaoFinal > 0) saldoEl.className = 'text-2xl font-bold text-emerald-500';
@@ -207,7 +207,7 @@ window.initGlobalKPIs = function(dados) {
     document.getElementById('stat-avg-eng').textContent = (somaEng / totalEjs).toFixed(1) + '%';
     document.getElementById('stat-avg-tempo').textContent = (somaTempo / totalEjs).toFixed(0) + ' d';
     
-    document.getElementById('stat-saldo-final').textContent = saldoEvolucaoFinal > 0 ? `+${saldoEvolucaoFinal}%` : `${saldoEvolucaoFinal}%`;
+    document.getElementById('stat-saldo-final').textContent = saldoEvolucaoFinal > 0 ? `+${saldoEvolucaoFinal}` : `${saldoEvolucaoFinal}`;
     document.getElementById('stat-saldo-sobe').textContent = sobe;
     document.getElementById('stat-saldo-cai').textContent = cai;
     document.getElementById('stat-saldo-perm').textContent = perm;
