@@ -23,7 +23,7 @@ window.processLocalFiles = function() {
     const fileFarol = document.getElementById('upload-farol').files[0];
     
     if (!fileTrack || !fileFarol) {
-        alert("Por favor, selecione ambos os arquivos CSV (Tracking e Farol).");
+        alert("Por favor, selecione ambos os arquivos (Tracking e Farol).");
         return;
     }
     
@@ -31,8 +31,8 @@ window.processLocalFiles = function() {
     document.getElementById('network-status').textContent = 'Processando arquivos locais...';
 
     Promise.all([
-        fileTrack.text(),
-        fileFarol.text()
+        readFileAsCSV(fileTrack),
+        readFileAsCSV(fileFarol)
     ]).then(([trackingText, clusterText]) => {
         processCSVTexts(trackingText, clusterText);
     }).catch(err => {
@@ -40,6 +40,29 @@ window.processLocalFiles = function() {
         alert("Erro ao ler os arquivos locais.");
     });
 };
+
+function readFileAsCSV(file) {
+    return new Promise((resolve, reject) => {
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheetName]);
+                    resolve(csv);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        } else {
+            file.text().then(resolve).catch(reject);
+        }
+    });
+}
 
 function processCSVTexts(trackingText, clusterText) {
     // Limpar cabecalho do tracking
