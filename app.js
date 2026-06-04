@@ -135,6 +135,7 @@ function processData(trackRows, clusterRows) {
     const colCIndPrev = cHeaders.find(k => k.includes('PREVISTO') && k.includes('NDICE'));
     const colCIndMin = cHeaders.find(k => k.includes('NIMO') && k.includes('NDICE'));
     const colCIndPular = cHeaders.find(k => k.includes('SUBIR') && k.includes('NDICE'));
+    const colCFarolCsat = cHeaders.find(k => k.includes('CSAT ALCAN'));
 
     clusterRows.forEach(row => {
         let id = safeFloat(row['ID'] || row['id']);
@@ -145,7 +146,8 @@ function processData(trackRows, clusterRows) {
             indiceAtual: cleanMoney(row[colCIndAtual]),
             indicePrevisto: cleanMoney(row[colCIndPrev]),
             indiceMinimo: cleanMoney(row[colCIndMin]),
-            indicePular: cleanMoney(row[colCIndPular])
+            indicePular: cleanMoney(row[colCIndPular]),
+            csatFarol: colCFarolCsat ? safeFloat(row[colCFarolCsat]) : null
         };
         if(id > 0) clusterMapById[id] = forecast;
         if(nomeEJ) clusterMapByName[nomeEJ] = forecast;
@@ -189,6 +191,11 @@ function processData(trackRows, clusterRows) {
         let metaEngFinal = safeFloat(row[colMetaEng]) > 0 ? safeFloat(row[colMetaEng]) : 75;
         let metaTempoFinal = safeFloat(row[colMetaTempo]) > 0 ? safeFloat(row[colMetaTempo]) : 50;
         
+        // Substituir CSAT pelo valor exato da planilha de Farol, se existir, para corrigir a exibição.
+        if (clusterForecast.csatFarol !== null && clusterForecast.csatFarol !== undefined) {
+            rawCsat = clusterForecast.csatFarol;
+        }
+
         // Se a CSAT for 0, garantimos o teto minimo 3.5
         if (rawCsat === 0) rawCsat = 3.5;
 
@@ -230,8 +237,12 @@ function initGlobalKPIs(dados) {
         else countZerada++;
     });
     
-    // Conforme layout/demanda: Saldo de Evolução da Rede
-    let saldoEvolucao = countVerde - (countVermelho + countZerada);
+    // Calcula o Saldo de Evolução: (Sobe) - (Cai)
+    let saldoEvolucao = 0;
+    dados.forEach(ej => {
+        if (ej.previsao && ej.previsao.situacao === 'SOBE') saldoEvolucao++;
+        else if (ej.previsao && ej.previsao.situacao === 'CAI') saldoEvolucao--;
+    });
 
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
     

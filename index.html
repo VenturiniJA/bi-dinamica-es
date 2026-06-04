@@ -33,13 +33,17 @@
 
     <div class="bg-es-blue text-white text-xs px-4 py-2 flex justify-between items-center z-50 shadow-md shrink-0">
         <div class="flex gap-4 items-center">
-            <label class="cursor-pointer font-semibold hover:text-es-pink transition">
-                📂 Anexar Tracking
+            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha ejs_2026.xlsx ou Farol">
+                📂 Anexar EJs (Farol)
+                <input type="file" id="upload-farol" accept=".csv,.xlsx" class="hidden">
+            </label>
+            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha monitoring_acumulated.xlsx ou Tracking">
+                📂 Anexar Acumulado (Fat.)
                 <input type="file" id="upload-tracking" accept=".csv,.xlsx" class="hidden">
             </label>
-            <label class="cursor-pointer font-semibold hover:text-es-pink transition">
-                📂 Anexar Farol
-                <input type="file" id="upload-farol" accept=".csv,.xlsx" class="hidden">
+            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha monitoring.xlsx">
+                📂 Anexar Mensal (CSAT)
+                <input type="file" id="upload-mensal" accept=".csv,.xlsx" class="hidden">
             </label>
             <button onclick="processLocalFiles()" class="bg-es-pink text-white px-3 py-1 rounded font-bold hover:bg-pink-600 transition shadow">🚀 Processar Local</button>
         </div>
