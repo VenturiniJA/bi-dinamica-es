@@ -237,20 +237,42 @@ function initGlobalKPIs(dados) {
         else countZerada++;
     });
     
-    // Calcula o Saldo de EvoluÃ§Ã£o: (Sobe) - (Cai)
+    // Calcula o Saldo de EvoluÃ§Ã£o e MÃ©dias para a Aba EstatÃ­sticas
     let saldoEvolucao = 0;
+    let sobe = 0, cai = 0, perm = 0;
+    let somaCsat = 0, somaEng = 0, somaTempo = 0;
+    
     dados.forEach(ej => {
-        if (ej.previsao && ej.previsao.situacao === 'SOBE') saldoEvolucao++;
-        else if (ej.previsao && ej.previsao.situacao === 'CAI') saldoEvolucao--;
+        if (ej.previsao) {
+            if (ej.previsao.situacao === 'SOBE') { saldoEvolucao++; sobe++; }
+            else if (ej.previsao.situacao === 'CAI') { saldoEvolucao--; cai++; }
+            else { perm++; }
+        }
+        somaCsat += ej.csat.alcancado || 0;
+        somaEng += ej.engajamento.alcancado || 0;
+        somaTempo += ej.tempo.alcancado || 0;
     });
 
+    // Top Header KPIs
     document.getElementById("global-revenue").textContent = moneyFmt(totalRevenue);
+    document.getElementById("global-ac").textContent = saldoEvolucao > 0 ? `+${saldoEvolucao}` : saldoEvolucao;
     
     let saldoEl = document.getElementById("global-ac");
-    saldoEl.textContent = saldoEvolucao > 0 ? `+${saldoEvolucao}` : saldoEvolucao;
     if(saldoEvolucao > 0) saldoEl.className = "text-2xl font-bold text-status-emerald";
     else if(saldoEvolucao < 0) saldoEl.className = "text-2xl font-bold text-status-red";
     else saldoEl.className = "text-2xl font-bold text-slate-900";
+
+    // EstatÃ­sticas Detalhadas
+    const totalEjs = dados.length || 1;
+    document.getElementById('stat-total-ejs').textContent = dados.length;
+    document.getElementById('stat-avg-csat').textContent = (somaCsat / totalEjs).toFixed(2);
+    document.getElementById('stat-avg-eng').textContent = (somaEng / totalEjs).toFixed(1) + '%';
+    document.getElementById('stat-avg-tempo').textContent = (somaTempo / totalEjs).toFixed(0) + ' d';
+    
+    document.getElementById('stat-saldo-final').textContent = saldoEvolucao > 0 ? `+${saldoEvolucao}` : saldoEvolucao;
+    document.getElementById('stat-saldo-sobe').textContent = sobe;
+    document.getElementById('stat-saldo-cai').textContent = cai;
+    document.getElementById('stat-saldo-perm').textContent = perm;
 
     document.getElementById("count-verde").textContent = countVerde;
     document.getElementById("count-amarelo").textContent = countAmarelo;
@@ -657,3 +679,78 @@ function openTacticalProfile(ej) {
     const textarea = document.getElementById("meeting-notes");
     textarea.value = localStorage.getItem(`notas_ej_v2_${ej.id}`) || '';
 }
+
+// UI Functions para Estatísticas e Modal
+function toggleStats() {
+    const crmDash = document.getElementById('crm-dashboard');
+    const statsDash = document.getElementById('stats-dashboard');
+    const ejProfile = document.getElementById('ej-profile');
+    
+    // Fechar profile se estiver aberto
+    if (ejProfile && !ejProfile.classList.contains('hidden')) {
+        ejProfile.classList.add('hidden');
+    }
+    
+    if (statsDash.classList.contains('hidden')) {
+        crmDash.classList.add('hidden');
+        statsDash.classList.remove('hidden');
+    } else {
+        statsDash.classList.add('hidden');
+        crmDash.classList.remove('hidden');
+    }
+}
+
+const mejdDocs = {
+    faturamento: {
+        title: 'Meta de Faturamento',
+        text: 'Representa a receita bruta gerada através da entrega de projetos e serviços da Empresa Júnior. É o principal indicador de impacto no mercado e de sustentabilidade financeira da EJ no ciclo.'
+    },
+    csat: {
+        title: 'CSAT (Customer Satisfaction Score)',
+        text: 'Mede o grau de satisfação dos clientes em relação aos projetos entregues. É calculado através da média das notas de avaliação disparadas ao final de cada projeto, numa escala convertida de 1 a 5.'
+    },
+    engajamento: {
+        title: 'Engajamento com o MEJ',
+        text: 'Indica a proporção de membros da Empresa Júnior que realizaram ou estão ativamente alocados em projetos de consultoria no ciclo atual, medindo a capacidade da EJ de proporcionar vivência empresarial a todos.'
+    },
+    tempo: {
+        title: 'Tempo de Permanência',
+        text: 'Reflete a média de tempo que os membros permanecem ativos na empresa. Um tempo ideal demonstra uma boa retenção de talentos e um pipeline de liderança saudável para o crescimento da EJ.'
+    }
+};
+
+function showInfo(type) {
+    const modal = document.getElementById('info-modal');
+    const modalContent = document.getElementById('info-modal-content');
+    const title = document.getElementById('info-modal-title');
+    const body = document.getElementById('info-modal-body');
+    
+    if (mejdDocs[type]) {
+        title.textContent = mejdDocs[type].title;
+        body.textContent = mejdDocs[type].text;
+    }
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+    }, 10);
+}
+
+function closeInfoModal() {
+    const modal = document.getElementById('info-modal');
+    const modalContent = document.getElementById('info-modal-content');
+    
+    modal.classList.add('opacity-0');
+    modalContent.classList.remove('scale-100');
+    modalContent.classList.add('scale-95');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 300);
+}
+
