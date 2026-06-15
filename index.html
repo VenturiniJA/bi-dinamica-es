@@ -3,397 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI Juniores ES - CRM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Calculadora SDE | Rede Juniores ES</title>
+    <meta name="description" content="Calculadora Analítica de Cluster e Saldo de Evolução para a Rede do Movimento Empresa Júnior do Espírito Santo">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Outfit', 'sans-serif'] },
-                    colors: {
-                        'es-blue': '#1a365d', 'es-pink': '#F682A5',
-                        'status-emerald': '#10b981', 'status-yellow': '#f59e0b', 'status-red': '#ef4444', 'status-zerada': '#94a3b8'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen overflow-hidden flex flex-col font-sans selection:bg-es-pink selection:text-white">
+<body>
 
-    <div class="bg-es-blue text-white text-xs px-4 py-2 flex justify-between items-center z-50 shadow-md shrink-0">
-        <div class="flex gap-4 items-center">
-            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha ejs_2026.xlsx ou Farol">
-                📂 Anexar EJs (Farol)
-                <input type="file" id="upload-farol" accept=".csv,.xlsx" class="hidden">
-            </label>
-            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha monitoring_acumulated.xlsx ou Tracking">
-                📂 Anexar Acumulado (Fat.)
-                <input type="file" id="upload-tracking" accept=".csv,.xlsx" class="hidden">
-            </label>
-            <label class="cursor-pointer font-semibold hover:text-es-pink transition" title="Planilha monitoring.xlsx">
-                📂 Anexar Mensal (CSAT)
-                <input type="file" id="upload-mensal" accept=".csv,.xlsx" class="hidden">
-            </label>
-            <button onclick="processLocalFiles()" class="bg-es-pink text-white px-3 py-1 rounded font-bold hover:bg-pink-600 transition shadow">🚀 Processar Local</button>
-        </div>
+<div class="app-layout">
+
+    <!-- UPLOAD BAR -->
+    <div class="upload-bar" id="upload-bar">
+        <label class="upload-btn" title="Planilha ejs_2026.xlsx">
+            📂 EJs (Farol)
+            <input type="file" id="upload-farol" accept=".csv,.xlsx" style="display:none">
+        </label>
+        <label class="upload-btn" title="Planilha monitoring_acumulated.xlsx">
+            📂 Acumulado (Fat.)
+            <input type="file" id="upload-tracking" accept=".csv,.xlsx" style="display:none">
+        </label>
+        <label class="upload-btn" title="Planilha monitoring.xlsx">
+            📂 Mensal (CSAT)
+            <input type="file" id="upload-mensal" accept=".csv,.xlsx" style="display:none">
+        </label>
+        <button class="process-btn" onclick="processLocalFiles()">🚀 Processar Dados</button>
+        <span id="network-status" style="font-size:0.72rem;font-weight:600;color:var(--brand-pink);margin-left:auto;">Aguardando dados...</span>
     </div>
 
-    <!-- Header Principal -->
-    <header class="glass-header border-b border-slate-200 px-6 py-4 flex justify-between items-center z-30 shrink-0 shadow-sm">
-        <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-es-blue to-es-pink flex items-center justify-center shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+    <!-- HEADER -->
+    <header class="app-header">
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="width:40px;height:40px;border-radius:12px;background:var(--brand-gradient);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-glow-blue);">
+                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
             </div>
             <div>
-                <h1 class="text-2xl font-heading font-extrabold text-slate-900 tracking-tight">Dinâmica de Rede - Juniores ES</h1>
-                <p class="text-xs text-slate-500 font-medium tracking-wide">CRM Estratégico (Tracking + Farol de Cluster)</p>
+                <h1 style="font-family:var(--font-heading);font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;">Calculadora SDE</h1>
+                <p style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">Rede Juniores ES • Ciclo 2026</p>
             </div>
         </div>
-        <div class="flex items-center gap-6">
-            <button onclick="toggleStats()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
-                📊 Estatísticas
-            </button>
-            <div class="text-right">
-                <span id="network-status" class="text-xs font-semibold text-es-pink bg-pink-50 px-2 py-1 rounded-md animate-pulse">Carregando CRM...</span>
+
+        <!-- Global KPIs -->
+        <div style="display:flex;align-items:center;gap:32px;">
+            <div class="kpi-card">
+                <span class="kpi-label">Saldo de Evolução</span>
+                <span class="kpi-value neutral" id="header-sde">0.00</span>
             </div>
-            <div class="h-8 w-px bg-slate-200"></div>
-            <div class="flex items-center gap-6">
-                <div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Faturamento Alcançado</p>
-                    <p id="global-revenue" class="text-xl font-bold text-slate-900">R$ 0</p>
+            <div style="width:1px;height:36px;background:var(--border-subtle);"></div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total EJs</span>
+                <span class="kpi-value neutral" id="header-total-ejs" style="font-size:1.4rem;">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Faturamento Rede</span>
+                <span class="kpi-value neutral" id="header-faturamento" style="font-size:1.4rem;">R$ 0</span>
+            </div>
+            <div style="width:1px;height:36px;background:var(--border-subtle);"></div>
+            <div style="display:flex;gap:16px;">
+                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs subindo de Cluster">
+                    <span class="kpi-label" style="color:var(--status-sobe);">▲ Sobe</span>
+                    <span class="kpi-value positive" id="header-sobe" style="font-size:1.4rem;">0</span>
                 </div>
-                <div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Saldo de Evolução Atual</p>
-                    <p id="global-ac" class="text-2xl font-bold text-slate-900">0</p>
+                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs caindo de Cluster">
+                    <span class="kpi-label" style="color:var(--status-cai);">▼ Cai</span>
+                    <span class="kpi-value negative" id="header-cai" style="font-size:1.4rem;">0</span>
                 </div>
-                <!-- Contadores Farol -->
-                <div class="flex items-center gap-4 border-l border-slate-200 pl-6">
-                    <div class="text-center cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors" onclick="filterByFarol('VERDE')">
-                        <p class="text-[10px] text-status-emerald font-bold uppercase tracking-wider mb-1">Verde</p>
-                        <p id="count-verde" class="text-xl font-bold text-status-emerald">0</p>
-                    </div>
-                    <div class="text-center cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors" onclick="filterByFarol('AMARELO')">
-                        <p class="text-[10px] text-status-yellow font-bold uppercase tracking-wider mb-1">Amarelo</p>
-                        <p id="count-amarelo" class="text-xl font-bold text-status-yellow">0</p>
-                    </div>
-                    <div class="text-center cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors" onclick="filterByFarol('VERMELHO')">
-                        <p class="text-[10px] text-status-red font-bold uppercase tracking-wider mb-1">Vermelho</p>
-                        <p id="count-vermelho" class="text-xl font-bold text-status-red">0</p>
-                    </div>
-                    <div class="text-center cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors" onclick="filterByFarol('ZERADA')">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Zeradas</p>
-                        <p id="count-zerada" class="text-xl font-bold text-slate-400">0</p>
-                    </div>
+                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs que permanecem">
+                    <span class="kpi-label" style="color:var(--status-permanece);">= Perm</span>
+                    <span class="kpi-value neutral" id="header-perm" style="font-size:1.4rem;color:var(--text-muted);">0</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="flex-1 flex overflow-hidden relative">
-        
-        <!-- Painel Esquerdo (Lista) -->
-        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
-            <div class="p-5 border-b border-slate-100 bg-slate-50">
-                <h2 class="text-sm font-heading font-bold text-slate-800 uppercase tracking-wide">EJs por Cluster</h2>
+    <!-- BODY -->
+    <div class="app-body">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);">EJs por Cluster</span>
+                    <span id="sidebar-count" style="font-size:0.65rem;color:var(--text-muted);background:var(--bg-elevated);padding:2px 8px;border-radius:var(--radius-full);font-weight:600;">0</span>
+                </div>
+                <input type="text" id="sidebar-search" placeholder="Buscar EJ..." style="width:100%;margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:0.78rem;outline:none;">
             </div>
-            <div id="cluster-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
-                <!-- Lista injetada aqui -->
+            <div class="sidebar-content custom-scrollbar" id="sidebar-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p style="font-size:0.78rem;">Importe as planilhas para começar</p>
+                </div>
             </div>
         </aside>
 
-        <!-- Main Workspace (Direita) -->
-        <main class="flex-1 bg-slate-50/50 flex flex-col relative overflow-hidden">
-            
-            <!-- VIEW 1: DATA TABLE DASHBOARD (Visão Macro) -->
-            <div id="crm-dashboard" class="absolute inset-0 flex flex-col p-6 overflow-hidden transition-all duration-300">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-heading font-bold text-slate-800">Visão da Rede</h2>
-                    <p class="text-sm text-slate-500 mt-1">Acompanhe o desempenho, faturamento e projeção de cada Empresa Júnior.</p>
+        <!-- MAIN -->
+        <main class="main-content">
+
+            <!-- NAV TABS -->
+            <nav class="nav-tabs" id="nav-tabs">
+                <div class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM14 13a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"/></svg>
+                    Dashboard SDE
                 </div>
-                
-                <div class="flex-1 overflow-auto custom-scrollbar bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 z-10">
-                            <tr>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Empresa Júnior</th>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Cluster</th>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Farol</th>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Faturamento</th>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">CSAT</th>
-                                <th class="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Situação (Ano)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashboard-table-body" class="divide-y divide-slate-100">
-                            <!-- Rows injetadas aqui -->
-                        </tbody>
-                    </table>
+                <div class="nav-tab" data-view="simulador" onclick="switchView('simulador')">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Simulador
+                    <span class="tab-badge" id="tab-badge-sim">0</span>
                 </div>
+                <div class="nav-tab" data-view="apostas" onclick="switchView('apostas')">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Gestão de Apostas
+                    <span class="tab-badge" id="tab-badge-apostas">0</span>
+                </div>
+                <div class="nav-tab" data-view="acao" onclick="switchView('acao')">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    Plano de Ação
+                </div>
+            </nav>
+
+            <!-- VIEWS CONTAINER -->
+            <div class="view-container custom-scrollbar" id="view-container">
+
+                <!-- ========== VIEW 1: DASHBOARD SDE ========== -->
+                <div class="view-panel active" id="view-dashboard">
+
+                    <h2 class="section-title">Dashboard — Saldo de Evolução</h2>
+                    <p class="section-subtitle">Fórmula SDE 2026 aplicada com pesos ponderados por cluster. Visualize a saúde da rede em tempo real.</p>
+
+                    <!-- SDE Principal + Fórmula -->
+                    <div style="display:grid;grid-template-columns:320px 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
+
+                        <!-- SDE Gauge -->
+                        <div class="glass-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;">
+                            <span class="kpi-label">SDE da Rede (Fórmula 2026)</span>
+                            <div id="dash-sde-value" class="sde-gauge-value" style="margin:8px 0;">0.00</div>
+                            <div id="dash-sde-status" class="badge badge-permanece">NEUTRO</div>
+                            <p style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;max-width:260px;">
+                                SDE = Σ (Peso_Cᵢ × (Sobe_Cᵢ − Cai_Cᵢ))
+                            </p>
+                        </div>
+
+                        <!-- Breakdown por Cluster -->
+                        <div class="glass-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+                                <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Contribuição por Cluster</span>
+                                <span style="font-size:0.68rem;color:var(--text-muted);">Peso × (Sobe − Cai)</span>
+                            </div>
+                            <div id="dash-cluster-breakdown">
+                                <!-- Cluster rows injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="grid-5" style="margin-bottom:var(--space-lg);" id="dash-kpi-cards">
+                        <!-- Injected: 5 cards, um por cluster -->
+                    </div>
+
+                    <!-- Tabela Resumo -->
+                    <div class="glass-card" style="padding:0;overflow:hidden;">
+                        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Todas as EJs da Rede</span>
+                            <div style="display:flex;gap:8px;">
+                                <select id="dash-filter-cluster" class="sim-select" style="font-size:0.72rem;" onchange="renderDashboardTable()">
+                                    <option value="all">Todos Clusters</option>
+                                    <option value="1">Cluster 1</option>
+                                    <option value="2">Cluster 2</option>
+                                    <option value="3">Cluster 3</option>
+                                    <option value="4">Cluster 4</option>
+                                    <option value="5">Cluster 5</option>
+                                </select>
+                                <select id="dash-filter-situacao" class="sim-select" style="font-size:0.72rem;" onchange="renderDashboardTable()">
+                                    <option value="all">Todas Situações</option>
+                                    <option value="SOBE">Sobe</option>
+                                    <option value="CAI">Cai</option>
+                                    <option value="PERMANECE">Permanece</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="max-height:400px;overflow-y:auto;" class="custom-scrollbar">
+                            <table class="data-table" id="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th>Empresa Júnior</th>
+                                        <th style="text-align:center;">Cluster</th>
+                                        <th style="text-align:right;">Faturamento</th>
+                                        <th style="text-align:center;">CSAT</th>
+                                        <th style="text-align:center;">Proximidade</th>
+                                        <th style="text-align:center;">Situação</th>
+                                        <th style="text-align:center;">Trava</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-table-body">
+                                    <!-- Rows injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== VIEW 2: SIMULADOR ANTI-GRAVIDADE ========== -->
+                <div class="view-panel" id="view-simulador">
+
+                    <h2 class="section-title">Simulador Anti-Gravidade</h2>
+                    <p class="section-subtitle">Altere o estado de qualquer EJ e veja o impacto imediato no SDE. Use o Solver para descobrir quantas EJs precisam subir para atingir sua meta.</p>
+
+                    <!-- Solver Panel -->
+                    <div class="solver-panel" style="margin-bottom:var(--space-lg);">
+                        <div style="display:flex;align-items:center;gap:var(--space-lg);flex-wrap:wrap;">
+                            <div>
+                                <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);">🎯 Solver: "Quantas EJs precisam subir?"</span>
+                                <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Defina a meta de SDE e o sistema calcula o caminho para alcançá-la.</p>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Meta SDE:</span>
+                                <input type="number" id="solver-meta" class="solver-input" value="3.0" step="0.1" min="0" oninput="runSolver()">
+                            </div>
+                            <div style="flex:1;display:flex;gap:var(--space-md);flex-wrap:wrap;" id="solver-results">
+                                <!-- Solver results injected -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SDE Comparison -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-lg);">
+                        <div class="glass-card" style="text-align:center;">
+                            <span class="kpi-label">SDE Original</span>
+                            <div id="sim-sde-original" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
+                        </div>
+                        <div class="glass-card" style="text-align:center;">
+                            <span class="kpi-label">SDE Simulado</span>
+                            <div id="sim-sde-simulado" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
+                        </div>
+                        <div class="glass-card" style="text-align:center;">
+                            <span class="kpi-label">Delta (Impacto)</span>
+                            <div id="sim-sde-delta" class="sim-delta" style="margin-top:8px;">+0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Sim Table -->
+                    <div class="glass-card" style="padding:0;overflow:hidden;">
+                        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Simulação Interativa — Alterar Situação</span>
+                            <button class="btn-ghost" onclick="resetSimulation()">↺ Resetar Simulação</button>
+                        </div>
+                        <div style="max-height:500px;overflow-y:auto;" class="custom-scrollbar">
+                            <table class="data-table" id="sim-table">
+                                <thead>
+                                    <tr>
+                                        <th>Empresa Júnior</th>
+                                        <th style="text-align:center;">Cluster</th>
+                                        <th style="text-align:center;">Peso</th>
+                                        <th style="text-align:center;">Situação Original</th>
+                                        <th style="text-align:center;">Situação Simulada</th>
+                                        <th style="text-align:center;">Impacto no SDE</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sim-table-body">
+                                    <!-- Rows injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== VIEW 3: GESTÃO DE APOSTAS ========== -->
+                <div class="view-panel" id="view-apostas">
+
+                    <h2 class="section-title">Gestão de Apostas</h2>
+                    <p class="section-subtitle">Priorização estratégica de EJs para intervenção. Foco em ganhos rápidos (C1 e C2) e proteção contra quedas.</p>
+
+                    <!-- Projeção SDE -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
+                        <div class="glass-card card-glow-green">
+                            <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">📊 Projeção: SDE Atual vs. Projetado</span>
+                            <div style="display:flex;align-items:center;gap:var(--space-xl);justify-content:center;">
+                                <div style="text-align:center;">
+                                    <div id="proj-sde-atual" style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--text-primary);">0.00</div>
+                                    <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">SDE Atual</div>
+                                </div>
+                                <svg width="32" height="32" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                                <div style="text-align:center;">
+                                    <div id="proj-sde-projetado" style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--status-sobe);">0.00</div>
+                                    <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">Projetado (com apostas)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card">
+                            <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">🎯 Resumo de Apostas</span>
+                            <div class="grid-2" style="gap:var(--space-sm);">
+                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(52,211,153,0.08);border-radius:var(--radius-md);">
+                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alto);"></div>
+                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alto Retorno</span>
+                                    <span id="count-alto" style="margin-left:auto;font-weight:800;color:var(--aposta-alto);">0</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:var(--radius-md);">
+                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-potencial);"></div>
+                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Potencial</span>
+                                    <span id="count-potencial" style="margin-left:auto;font-weight:800;color:var(--aposta-potencial);">0</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(251,191,36,0.08);border-radius:var(--radius-md);">
+                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-risco);"></div>
+                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Em Risco</span>
+                                    <span id="count-risco" style="margin-left:auto;font-weight:800;color:var(--aposta-risco);">0</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(248,113,113,0.08);border-radius:var(--radius-md);">
+                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alerta);"></div>
+                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alerta Vermelho</span>
+                                    <span id="count-alerta" style="margin-left:auto;font-weight:800;color:var(--aposta-alerta);">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Categoria -->
+                    <div style="display:flex;gap:8px;margin-bottom:var(--space-lg);flex-wrap:wrap;">
+                        <button class="btn-ghost" style="font-size:0.72rem;" onclick="filterApostas('all')">Todas</button>
+                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(52,211,153,0.3);color:var(--aposta-alto);" onclick="filterApostas('alto')">🎯 Alto Retorno</button>
+                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(59,130,246,0.3);color:var(--aposta-potencial);" onclick="filterApostas('potencial')">⚡ Potencial</button>
+                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(251,191,36,0.3);color:var(--aposta-risco);" onclick="filterApostas('risco')">⚠️ Em Risco</button>
+                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(248,113,113,0.3);color:var(--aposta-alerta);" onclick="filterApostas('alerta')">🚨 Alerta</button>
+                    </div>
+
+                    <!-- Cards de Apostas -->
+                    <div id="apostas-container" class="grid-2">
+                        <!-- Aposta cards injected -->
+                    </div>
+                </div>
+
+                <!-- ========== VIEW 4: PLANO DE AÇÃO ========== -->
+                <div class="view-panel" id="view-acao">
+
+                    <h2 class="section-title">Plano de Ação — Agir na Rede</h2>
+                    <p class="section-subtitle">Micro-relatórios com travas identificadas, ações recomendadas e ritmo de acompanhamento para cada EJ priorizada.</p>
+
+                    <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-lg);align-items:center;">
+                        <button class="btn-primary" onclick="generateAllActionPlans()">⚡ Gerar Planos para Apostas de Alto Retorno</button>
+                        <button class="btn-ghost" onclick="generateAllActionPlans('all')">📋 Gerar para Todas as Apostas</button>
+                        <button class="btn-ghost" onclick="printActionPlans()" style="margin-left:auto;">🖨️ Imprimir</button>
+                    </div>
+
+                    <div id="action-plans-container">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p style="font-size:0.82rem;font-weight:600;">Clique em "Gerar Planos" para criar os micro-relatórios</p>
+                            <p style="font-size:0.72rem;margin-top:4px;">Os planos serão baseados nas EJs priorizadas na Gestão de Apostas</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            <!-- VIEW 3: ESTATÍSTICAS (Visão Global) -->
-            <div id="stats-dashboard" class="absolute inset-0 flex flex-col p-6 overflow-y-auto custom-scrollbar bg-slate-50/50 hidden transition-all duration-300">
-                <div class="mb-6 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-heading font-bold text-slate-800">Estatísticas da Rede</h2>
-                        <p class="text-sm text-slate-500 mt-1">Visão analítica de faturamento, engajamento e projeções de cluster.</p>
-                    </div>
-                </div>
-                
-                <!-- Cards de Resumo -->
-                <div class="grid grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total de EJs</p>
-                        <p id="stat-total-ejs" class="text-3xl font-bold text-slate-800">0</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Média de Engajamento</p>
-                        <p id="stat-avg-eng" class="text-3xl font-bold text-slate-800">0%</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Média de CSAT</p>
-                        <p id="stat-avg-csat" class="text-3xl font-bold text-slate-800">0.0</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tempo de Perm. Médio</p>
-                        <p id="stat-avg-tempo" class="text-3xl font-bold text-slate-800">0 d</p>
-                    </div>
-                </div>
-
-                <!-- Detalhamento de Saldo -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Saldo de Evolução da Rede</h3>
-                    <div class="flex items-center gap-12">
-                        <div class="text-center">
-                            <p class="text-4xl font-extrabold text-es-blue" id="stat-saldo-final">0</p>
-                            <p class="text-sm text-slate-500 font-bold mt-1">Saldo Final</p>
-                        </div>
-                        <div class="flex-1 flex gap-4">
-                            <div class="flex-1 bg-green-50 p-4 rounded-lg border border-green-100 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-bold text-green-600" id="stat-saldo-sobe">0</span>
-                                <span class="text-xs text-green-700 font-bold uppercase mt-1">EJs Subindo</span>
-                            </div>
-                            <div class="flex-1 bg-red-50 p-4 rounded-lg border border-red-100 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-bold text-red-600" id="stat-saldo-cai">0</span>
-                                <span class="text-xs text-red-700 font-bold uppercase mt-1">EJs Caindo</span>
-                            </div>
-                            <div class="flex-1 bg-slate-100 p-4 rounded-lg border border-slate-200 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-bold text-slate-600" id="stat-saldo-perm">0</span>
-                                <span class="text-xs text-slate-700 font-bold uppercase mt-1">Permanecem</span>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-4 italic">* O Saldo é calculado como: (Quantidade de EJs com Situação Prevista para SUBIR) - (Quantidade de EJs com Situação Prevista para CAIR).</p>
-                </div>
-            </div>
-
-            <!-- VIEW 2: EJ PROFILE / FORMS (Visão Micro) -->
-            <div id="ej-profile" class="absolute inset-0 bg-white z-10 hidden flex-col transition-all duration-300">
-                <!-- Topbar do Profile -->
-                <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50 shrink-0">
-                    <div class="flex items-center gap-4">
-                        <button id="btn-back" class="p-2 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors" title="Voltar ao Kanban">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                        </button>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span id="profile-cluster" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded text-slate-600 bg-slate-200">Cluster 0</span>
-                                <span id="profile-farol" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded text-white bg-status-emerald">Farol</span>
-                                <span id="profile-forecast" class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border border-slate-300 text-slate-600">Previsão</span>
-                            </div>
-                            <h2 id="profile-name" class="text-3xl font-heading font-extrabold text-slate-900 leading-tight">Nome da EJ</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Conteúdo do Profile: Grid Split -->
-                <div class="flex-1 flex overflow-hidden">
-                    
-                    <!-- Esquerda: O Formulário / Caderno de Reuniões -->
-                    <div class="w-1/2 p-6 border-r border-slate-200 flex flex-col bg-white">
-                        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-es-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            Diário de Bordo da Reunião
-                        </h3>
-                        <p class="text-xs text-slate-500 mb-4">Escreva pautas, feedbacks e combinados. O texto é salvo automaticamente no seu navegador.</p>
-                        
-                        <div class="flex-1 relative rounded-xl border border-slate-300 shadow-inner bg-slate-50/50 focus-within:bg-white focus-within:border-es-blue focus-within:ring-1 focus-within:ring-es-blue transition-all">
-                            <textarea id="meeting-notes" class="w-full h-full p-4 bg-transparent resize-none outline-none text-slate-700 text-sm leading-relaxed custom-scrollbar placeholder:text-slate-400" placeholder="Ex: O faturamento estagnou no último trimestre. Precisamos lançar 3 novos projetos de ticket médio X até o final do mês..."></textarea>
-                        </div>
-                        <div class="mt-2 text-right">
-                            <span class="text-[10px] text-emerald-600 font-medium flex items-center justify-end gap-1">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                Salvo Localmente
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Direita: IA e Indicadores -->
-                    <div class="w-1/2 p-6 flex flex-col bg-slate-50 overflow-y-auto custom-scrollbar">
-                        
-                        <!-- AI Card -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-4 shadow-sm relative overflow-hidden shrink-0">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-es-blue"></div>
-                            <h4 class="text-xs font-bold text-es-blue uppercase tracking-wider mb-2 flex items-center gap-1">
-                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clip-rule="evenodd"></path></svg>
-                                Estratégia de Rede Recomendada
-                            </h4>
-                            <p id="profile-ai-text" class="text-[13px] text-slate-700 leading-relaxed font-medium"></p>
-                        </div>
-
-                        <!-- Calculadora de Cluster -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm shrink-0">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Longo Prazo (Calculadora de Cluster)</h4>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">Define a nota de corte para permanência ou avanço da EJ ao final do ano.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Índice Atual</p>
-                                        <p id="calc-indice-atual" class="text-base font-bold text-slate-700">0</p>
-                                    </div>
-                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-100 relative overflow-hidden">
-                                        <div class="absolute right-0 top-0 bottom-0 w-1 bg-es-blue"></div>
-                                        <p class="text-[10px] uppercase text-slate-400 font-bold mb-1">Índice Previsto (Final Ano)</p>
-                                        <p id="calc-indice-previsto" class="text-lg font-extrabold text-es-blue">0</p>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1">
-                                        <span id="calc-label-minimo">Corte Mínimo (Manter)</span>
-                                        <span id="calc-label-alvo">Alvo (Subir Cluster)</span>
-                                    </div>
-                                    <div class="relative w-full bg-slate-200 rounded-full h-2 mb-2">
-                                        <!-- Marcação do Mínimo -->
-                                        <div id="calc-marker-min" class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style="left: 20%;" title="Corte Mínimo"></div>
-                                        <!-- Barra de Progresso Prevista -->
-                                        <div id="calc-bar-previsto" class="bg-es-blue h-2 rounded-full absolute top-0 left-0" style="width: 50%"></div>
-                                    </div>
-                                    <div class="flex justify-between text-[10px] text-slate-400">
-                                        <span id="calc-val-minimo">0</span>
-                                        <span id="calc-val-alvo">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Grid de Metas -->
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 mt-2 shrink-0">Curto Prazo (Metas do Tracking)</h4>
-                        <div class="grid grid-cols-2 gap-4 shrink-0 pb-6">
-                            <!-- Faturamento -->
-                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
-                                <div class="p-4 border-b border-slate-100">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="text-xs font-bold text-slate-500 uppercase cursor-help hover:text-es-blue transition-colors flex items-center gap-1" onclick="showInfo('faturamento')">Faturamento <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></h5>
-                                        <span id="card-fat-percent" class="text-xs font-bold text-es-pink bg-pink-50 px-2 py-0.5 rounded">0%</span>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-1">
-                                        <span class="text-slate-500">Alcançado</span>
-                                        <span id="card-fat-alc" class="font-bold text-slate-800">R$ 0</span>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-2 text-xs">
-                                        <span class="text-slate-400">Meta Anual</span>
-                                        <span id="card-fat-meta" class="font-medium text-slate-500">R$ 0</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div id="card-fat-bar" class="bg-es-pink h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <!-- Progress Item: CSAT -->
-                                <div class="p-4 border-b border-slate-100">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="text-xs font-bold text-slate-500 uppercase cursor-help hover:text-es-blue transition-colors flex items-center gap-1" onclick="showInfo('csat')">CSAT <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></h5>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-1">
-                                        <span class="text-slate-500">Alcançado</span>
-                                        <span id="card-csat-alc" class="font-bold text-slate-800">0.0</span>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-2 text-xs">
-                                        <span class="text-slate-400">Meta</span>
-                                        <span id="card-csat-meta" class="font-medium text-slate-500">0.0</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div id="card-csat-bar" class="bg-es-blue h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <!-- Progress Item: Engajamento -->
-                                <div class="p-4 border-b border-slate-100">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="text-xs font-bold text-slate-500 uppercase cursor-help hover:text-es-blue transition-colors flex items-center gap-1" onclick="showInfo('engajamento')">Engajamento c/ MEJ <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></h5>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-1">
-                                        <span class="text-slate-500">Alcançado</span>
-                                        <span id="card-eng-alc" class="font-bold text-slate-800">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-2 text-xs">
-                                        <span class="text-slate-400">Meta</span>
-                                        <span id="card-eng-meta" class="font-medium text-slate-500">0</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div id="card-eng-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <!-- Progress Item: Tempo -->
-                                <div class="p-4">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="text-xs font-bold text-slate-500 uppercase cursor-help hover:text-es-blue transition-colors flex items-center gap-1" onclick="showInfo('tempo')">Tempo de Permanência <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></h5>
-                                    </div>
-                                    <div class="flex justify-between items-end mb-1">
-                                        <span class="text-slate-500">Alcançado</span>
-                                        <span id="card-tempo-alc" class="font-bold text-slate-800">0</span>
-                                    </div>
-                                    <div class="flex justify-between text-xs mb-3">
-                                        <span class="text-slate-400">Meta</span>
-                                        <span id="card-tempo-meta" class="font-medium text-slate-500">0</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div id="card-tempo-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
         </main>
     </div>
 
-    <div id="info-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center transition-all opacity-0">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-all" id="info-modal-content">
-            <div class="bg-es-blue text-white px-6 py-4 flex justify-between items-center">
-                <h3 id="info-modal-title" class="font-bold text-lg font-heading">Meta</h3>
-                <button onclick="closeInfoModal()" class="text-white/70 hover:text-white transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="p-6 text-slate-600 text-sm leading-relaxed" id="info-modal-body">
-                Carregando...
-            </div>
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                <button onclick="closeInfoModal()" class="px-4 py-2 bg-es-pink text-white rounded-lg font-bold hover:bg-pink-600 transition shadow">Entendi</button>
-            </div>
-        </div>
-    </div>
+</div>
 
-    <script src="app.js"></script><script src="native_engine.js"></script>
+<script src="native_engine.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
