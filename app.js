@@ -10,9 +10,9 @@ var currentApostaFilter = 'all';
 
 var PESOS_CLUSTER = { 1: 0.30, 2: 0.25, 3: 0.15, 4: 0.15, 5: 0.15 };
 var CLUSTER_COLORS = {
-    1: { color: '#f472b6', bg: 'rgba(244,114,182,0.12)', name: 'C1' },
+    1: { color: '#F26487', bg: 'rgba(242,100,135,0.12)', name: 'C1' },
     2: { color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', name: 'C2' },
-    3: { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', name: 'C3' },
+    3: { color: '#6BB0D1', bg: 'rgba(107,176,209,0.12)', name: 'C3' },
     4: { color: '#22d3ee', bg: 'rgba(34,211,238,0.12)', name: 'C4' },
     5: { color: '#34d399', bg: 'rgba(52,211,153,0.12)', name: 'C5' }
 };
@@ -270,7 +270,7 @@ function runSolver() {
             var peso = PESOS_CLUSTER[c]; var ejsN = Math.ceil(deficit / peso); var cc = CLUSTER_COLORS[c];
             var ejsD = window.allEJs.filter(function(e) { return e.cluster === c && e.situacao !== 'SOBE'; }).length;
             var viavel = ejsN <= ejsD;
-            var rgb = c===1?'244,114,182':c===2?'167,139,250':c===3?'59,130,246':c===4?'34,211,238':'52,211,153';
+            var rgb = c===1?'242,100,135':c===2?'167,139,250':c===3?'107,176,209':c===4?'34,211,238':'52,211,153';
             html += '<div style="background:'+cc.bg+';border:1px solid rgba('+rgb+',0.2);border-radius:var(--radius-md);padding:12px 16px;min-width:120px;text-align:center;">';
             html += '<div style="font-size:0.65rem;font-weight:700;color:'+cc.color+';text-transform:uppercase;margin-bottom:4px;">'+cc.name+' (peso '+peso+')</div>';
             html += '<div class="solver-result" style="font-size:1.8rem;">'+ejsN+'</div>';
@@ -401,22 +401,31 @@ function generateActionPlan(ej) {
     if (ej.situacao === 'CAI') diagDesc = 'A EJ esta em risco de <strong>cair de cluster</strong>. Principal causa: <strong>' + trava + '</strong>. Acao imediata necessaria.';
     else if (ej.categoriaAposta === 'alto') diagDesc = 'A EJ esta <strong>muito proxima de subir</strong> (' + Math.round(ej.proximidade) + '%). ' + (trava !== 'Nenhuma' ? 'Trava: <strong>' + trava + '</strong>.' : 'Indicadores no caminho.');
     else diagDesc = 'Precisa melhorias em <strong>' + trava + '</strong>. Proximidade: ' + Math.round(ej.proximidade) + '%.';
-    steps.push({ icon: 'D', iconBg: 'rgba(59,130,246,0.12)', iconColor: 'var(--brand-blue)', title: 'Diagnostico - A Trava', description: diagDesc });
+    steps.push({ icon: 'D', iconBg: 'rgba(107,176,209,0.12)', iconColor: 'var(--brand-blue)', title: 'Diagnostico - A Trava', description: diagDesc });
     var acaoDesc = '';
     if (trava === 'Faturamento' || trava === 'Nenhuma') {
-        acaoDesc = 'Focar na <strong>captacao e fechamento de projetos</strong>. ';
-        if (det.fatFalta > 0) acaoDesc += 'Faltam ~<strong>' + moneyFmt(det.fatFalta) + '</strong>. ';
-        acaoDesc += 'Lancar 2-3 propostas comerciais, aumentar ticket medio, explorar parcerias.';
-    } else if (trava === 'CSAT') acaoDesc = 'Investigar <strong>notas baixas</strong>. Falta ' + (det.csatFalta||0).toFixed(1) + ' pts. Pesquisa pos-projeto, checkpoints de qualidade, gestao de expectativas.';
-    else if (trava === 'ECM') acaoDesc = 'Aumentar <strong>ECM</strong>. Alocar mais membros em projetos, programa trainee, metas individuais.';
-    else if (trava === 'Fat. Colaborativo') acaoDesc = 'Desenvolver <strong>projetos em parceria</strong>. Identificar EJs complementares, propor 1+ projeto colaborativo.';
+        acaoDesc = 'Focar na <strong>captacao e fechamento de projetos</strong>. Lancar propostas comerciais, aumentar ticket medio.';
+    } else if (trava === 'CSAT') acaoDesc = 'Investigar <strong>notas baixas</strong>. Pesquisa pos-projeto, checkpoints de qualidade.';
+    else if (trava === 'ECM') acaoDesc = 'Aumentar <strong>ECM</strong>. Alocar mais membros em projetos, programa trainee.';
+    else if (trava === 'Fat. Colaborativo') acaoDesc = 'Desenvolver <strong>projetos em parceria</strong>. Identificar EJs complementares.';
     steps.push({ icon: 'A', iconBg: 'rgba(52,211,153,0.12)', iconColor: 'var(--status-sobe)', title: 'Acao Recomendada', description: acaoDesc });
     var metaDesc = '';
     if (ej.cluster < 5) {
         var cr = CLUSTER_CRITERIOS[ej.cluster];
-        if (cr && cr.fatSubir) metaDesc = 'Para C' + (ej.cluster+1) + ': <strong>Fat >= ' + moneyFmt(cr.fatSubir) + '</strong>, <strong>CSAT >= ' + cr.csatSubir + '</strong>, <strong>ECM >= ' + cr.ecmSubir + '%</strong>, <strong>Colab >= ' + cr.fcolabSubir + '%</strong>.';
+        if (cr) {
+            metaDesc = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">';
+            var fM = cr.fatSubir || 0; var fA = ej.faturamento.alcancado || 0; var fD = Math.max(0, fM - fA);
+            metaDesc += '<div style="background:rgba(255,255,255,0.03);padding:6px;border-radius:4px;"><div style="font-size:0.65rem;color:var(--text-muted);">Faturamento</div><div style="font-size:0.75rem;font-weight:700;">Atual: '+moneyFmt(fA)+'</div><div style="font-size:0.75rem;color:var(--brand-blue);">Meta: '+moneyFmt(fM)+'</div>' + (fD>0?'<div style="font-size:0.7rem;color:var(--status-cai);">Falta: '+moneyFmt(fD)+'</div>':'<div style="font-size:0.7rem;color:var(--status-sobe);">Alcancado!</div>') + '</div>';
+            var cM = cr.csatSubir || 0; var cA = ej.csat.alcancado || 0; var cD = Math.max(0, cM - cA);
+            metaDesc += '<div style="background:rgba(255,255,255,0.03);padding:6px;border-radius:4px;"><div style="font-size:0.65rem;color:var(--text-muted);">CSAT</div><div style="font-size:0.75rem;font-weight:700;">Atual: '+cA.toFixed(1)+'</div><div style="font-size:0.75rem;color:var(--brand-blue);">Meta: '+cM.toFixed(1)+'</div>' + (cD>0?'<div style="font-size:0.7rem;color:var(--status-cai);">Falta: '+cD.toFixed(1)+'</div>':'<div style="font-size:0.7rem;color:var(--status-sobe);">Alcancado!</div>') + '</div>';
+            var eM = cr.ecmSubir || 0; var eA = ej.ecm.alcancado || 0; var eD = Math.max(0, eM - eA);
+            metaDesc += '<div style="background:rgba(255,255,255,0.03);padding:6px;border-radius:4px;"><div style="font-size:0.65rem;color:var(--text-muted);">ECM</div><div style="font-size:0.75rem;font-weight:700;">Atual: '+eA+'%</div><div style="font-size:0.75rem;color:var(--brand-blue);">Meta: '+eM+'%</div>' + (eD>0?'<div style="font-size:0.7rem;color:var(--status-cai);">Falta: '+eD+'%</div>':'<div style="font-size:0.7rem;color:var(--status-sobe);">Alcancado!</div>') + '</div>';
+            var colM = cr.fcolabSubir || 0; var colA = ej.fcolab || 0; var colD = Math.max(0, colM - colA);
+            metaDesc += '<div style="background:rgba(255,255,255,0.03);padding:6px;border-radius:4px;"><div style="font-size:0.65rem;color:var(--text-muted);">Fat. Colaborativo</div><div style="font-size:0.75rem;font-weight:700;">Atual: '+colA+'%</div><div style="font-size:0.75rem;color:var(--brand-blue);">Meta: '+colM+'%</div>' + (colD>0?'<div style="font-size:0.7rem;color:var(--status-cai);">Falta: '+colD+'%</div>':'<div style="font-size:0.7rem;color:var(--status-sobe);">Alcancado!</div>') + '</div>';
+            metaDesc += '</div>';
+        }
     } else metaDesc = 'C5 = topo. Foco em <strong>manter indicadores</strong> acima do minimo.';
-    steps.push({ icon: 'M', iconBg: 'rgba(244,114,182,0.12)', iconColor: 'var(--brand-pink)', title: 'Metas Proximo Cluster', description: metaDesc });
+    steps.push({ icon: 'M', iconBg: 'rgba(242,100,135,0.12)', iconColor: 'var(--brand-pink)', title: 'Metas P/ Proximo Cluster', description: metaDesc });
     var pw = PESOS_CLUSTER[ej.cluster];
     steps.push({ icon: 'I', iconBg: 'rgba(167,139,250,0.12)', iconColor: 'var(--brand-purple)', title: 'Impacto Estrategico', description: 'Impacto no SDE: <strong>+' + pw.toFixed(2) + '</strong> pts. Cluster ' + ej.cluster + ' = peso <strong>' + (pw*100) + '%</strong>.' + (ej.cluster<=2?' <strong>Prioridade maxima C1/C2!</strong>':'') });
     var ritmo = '';

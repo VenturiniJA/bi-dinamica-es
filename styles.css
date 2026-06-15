@@ -15,23 +15,23 @@
     --bg-elevated: rgba(30, 41, 59, 0.6);
 
     /* Brand */
-    --brand-blue: #3b82f6;
-    --brand-pink: #f472b6;
+    --brand-blue: #6BB0D1;
+    --brand-pink: #F26487;
     --brand-purple: #a78bfa;
     --brand-cyan: #22d3ee;
-    --brand-gradient: linear-gradient(135deg, #3b82f6, #a78bfa, #f472b6);
-    --brand-gradient-subtle: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(167,139,250,0.1), rgba(244,114,182,0.08));
+    --brand-gradient: linear-gradient(135deg, #6BB0D1, #a78bfa, #F26487);
+    --brand-gradient-subtle: linear-gradient(135deg, rgba(107,176,209,0.15), rgba(167,139,250,0.1), rgba(242,100,135,0.08));
 
     /* Cluster Colors */
-    --cluster-1: #f472b6;
+    --cluster-1: #F26487;
     --cluster-2: #a78bfa;
-    --cluster-3: #3b82f6;
+    --cluster-3: #6BB0D1;
     --cluster-4: #22d3ee;
     --cluster-5: #34d399;
 
-    --cluster-1-bg: rgba(244,114,182,0.12);
+    --cluster-1-bg: rgba(242,100,135,0.12);
     --cluster-2-bg: rgba(167,139,250,0.12);
-    --cluster-3-bg: rgba(59,130,246,0.12);
+    --cluster-3-bg: rgba(107,176,209,0.12);
     --cluster-4-bg: rgba(34,211,238,0.12);
     --cluster-5-bg: rgba(52,211,153,0.12);
 

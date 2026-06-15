@@ -185,8 +185,8 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const colMoEcm = findColIdx(keysMon, ["ECM"]);
 
     ejsData.forEach((row, i) => {
-        const fed = keysEJs[colFed] ? String(row[keysEJs[colFed]]).trim() : '';
-        if (fed && fed.toUpperCase() !== 'JUNIORES') return;
+        const fed = keysEJs[colFed] ? String(row[keysEJs[colFed]]).trim().toUpperCase() : '';
+        if (fed && !fed.includes('JUNIORES') && !fed.includes('ESPIRITO SANTO') && !fed.includes('ESPÍRITO SANTO')) return;
 
         const nome = keysEJs[colNomeEJ] ? String(row[keysEJs[colNomeEJ]]).trim() : '';
         const sigla = keysEJs[colSigla] ? String(row[keysEJs[colSigla]]).trim() : '';
@@ -326,36 +326,44 @@ function calcularSituacaoEJ(cluster, metricas) {
 
     // ---- Proximidade para MANTER (risco de cair) ----
     let proxManter = 100;
-    if (criterios.fatMinimo > 0 || criterios.csatMinimo > 0) {
-        const fatMantPerc = criterios.fatMinimo > 0 ? Math.min(100, (metricas.fatProjetado / criterios.fatMinimo) * 100) : 100;
-        const csatMantPerc = criterios.csatMinimo > 0 ? Math.min(100, (metricas.csat / criterios.csatMinimo) * 100) : 100;
-        proxManter = Math.min(fatMantPerc, csatMantPerc);
-        detalhes.proxManter = proxManter;
+    const fatMantPerc = criterios.fatMinimo > 0 ? Math.min(100, (metricas.fatProjetado / criterios.fatMinimo) * 100) : 100;
+    const csatMantPerc = criterios.csatMinimo > 0 ? Math.min(100, (metricas.csat / criterios.csatMinimo) * 100) : 100;
+    const ecmMantPerc = criterios.ecmMinimo > 0 ? Math.min(100, (metricas.ecm / criterios.ecmMinimo) * 100) : 100;
+    const fcolabMantPerc = criterios.fcolabMinimo > 0 ? Math.min(100, (metricas.fcolab / criterios.fcolabMinimo) * 100) : 100;
+    
+    proxManter = Math.min(fatMantPerc, csatMantPerc, ecmMantPerc, fcolabMantPerc);
+    detalhes.proxManter = proxManter;
+    
+    if (proxManter < 100 && !trava) {
+        if (fatMantPerc < 100) trava = 'Faturamento Mínimo';
+        else if (csatMantPerc < 100) trava = 'CSAT Mínimo';
+        else if (ecmMantPerc < 100) trava = 'ECM Mínimo';
+        else if (fcolabMantPerc < 100) trava = 'Fat. Colaborativo Mínimo';
     }
 
     // ---- Determinar situação ----
     if (cluster === 5) {
         // Cluster 5: só pode manter ou cair
-        if (proxManter >= 85) {
+        if (proxManter >= 100) {
             situacao = 'PERMANECE';
             proximidade = proxManter;
         } else {
             situacao = 'CAI';
             proximidade = proxManter;
-            trava = trava || 'Faturamento abaixo do mínimo para C5';
+            trava = trava || 'Indicadores abaixo do mínimo para C5';
         }
     } else {
         // Clusters 1-4
-        if (proxSubir >= 90) {
+        if (travas.length === 0 && proxSubir >= 100) {
             situacao = 'SOBE';
-            proximidade = proxSubir;
-        } else if (proxManter < 70) {
+            proximidade = 100;
+        } else if (proxManter < 100) {
             situacao = 'CAI';
             proximidade = proxManter;
-            if (!trava) trava = 'Indicadores abaixo do mínimo para manter';
+            if (!trava) trava = 'Abaixo do mínimo para manter';
         } else {
             situacao = 'PERMANECE';
-            proximidade = proxSubir; // mostrar quão perto de subir
+            proximidade = proxSubir; // mostra quão perto de subir
         }
     }
 
