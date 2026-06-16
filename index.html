@@ -12,7 +12,7 @@
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=5">
     <style>
         .loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -235,13 +235,15 @@
                                 <table class="data-table" id="dash-table">
                                     <thead>
                                         <tr>
-                                            <th>Empresa Júnior</th>
-                                            <th style="text-align:center;">Cluster</th>
-                                            <th style="text-align:right;">Faturamento</th>
-                                            <th style="text-align:center;">CSAT</th>
-                                            <th style="text-align:center;">Proximidade</th>
-                                            <th style="text-align:center;">Situação</th>
-                                            <th style="text-align:center;">Trava</th>
+                                            <th style="text-align:left;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Nome</th>
+                                            <th style="text-align:right;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Faturamento</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">CSAT</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">ECM</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">% Fat. Colab.</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Farol</th>
+                                            <th style="text-align:right;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Índice de Cluster</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Cluster</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Situação</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dash-table-body">
@@ -564,8 +566,9 @@
         </div>
     </div>
 
-    <script src="native_engine.js?v=4"></script>
-    <script src="app.js?v=4"></script>
+    <script src="native_engine.js?v=5"></script>
+    <script src="app.js?v=5"></script>
+    <link rel="stylesheet" href="styles.css?v=5">
 </body>
 
 </html>

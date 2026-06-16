@@ -461,9 +461,9 @@ body::before {
     white-space: nowrap;
 }
 
-.badge-sobe { background: var(--status-sobe-bg); color: var(--status-sobe); border: 1px solid rgba(52,211,153,0.2); }
-.badge-cai { background: var(--status-cai-bg); color: var(--status-cai); border: 1px solid rgba(248,113,113,0.2); }
-.badge-permanece { background: rgba(148,163,184,0.1); color: var(--status-permanece); border: 1px solid rgba(148,163,184,0.15); }
+.badge-sobe { background: #10b981; color: #fff; border: 1px solid rgba(0,0,0,0.1); }
+.badge-cai { background: #f43f5e; color: #fff; border: 1px solid rgba(0,0,0,0.1); }
+.badge-permanece { background: #ffb900; color: #000; border: 1px solid rgba(0,0,0,0.1); }
 
 .badge-alto { background: rgba(52,211,153,0.12); color: var(--aposta-alto); border: 1px solid rgba(52,211,153,0.2); }
 .badge-potencial { background: rgba(59,130,246,0.12); color: var(--aposta-potencial); border: 1px solid rgba(59,130,246,0.2); }

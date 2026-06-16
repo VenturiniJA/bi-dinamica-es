@@ -354,35 +354,49 @@ function renderDashboardTable() {
     
     var filtered = window.allEJs.slice();
     if (filterCluster !== 'all') filtered = filtered.filter(function(e) { return e.cluster === parseInt(filterCluster); });
-    if (filterSit !== 'all') filtered = filtered.filter(function(e) { return e.situacao === filterSit; });
+    if (filterSit !== 'all') filtered = filtered.filter(function(e) { return e.analisePrevista.situacao === filterSit; });
+    
     filtered.sort(function(a, b) {
         var ord = { 'CAI': 0, 'PERMANECE': 1, 'SOBE': 2 };
-        if (ord[a.situacao] !== ord[b.situacao]) return ord[a.situacao] - ord[b.situacao];
-        return b.proximidade - a.proximidade;
+        if (ord[a.analisePrevista.situacao] !== ord[b.analisePrevista.situacao]) return ord[a.analisePrevista.situacao] - ord[b.analisePrevista.situacao];
+        return b.analisePrevista.indiceCalculado - a.analisePrevista.indiceCalculado;
     });
+    
     var html = '';
     filtered.forEach(function(ej) {
-        var cc = CLUSTER_COLORS[ej.cluster];
-        if (!cc) cc = { name: 'C' + ej.cluster, color: '#ccc' };
-        var sitClass = ej.situacao === 'SOBE' ? 'badge-sobe' : ej.situacao === 'CAI' ? 'badge-cai' : 'badge-permanece';
-        var sitIcon = ej.situacao === 'SOBE' ? '+' : ej.situacao === 'CAI' ? '-' : '=';
-        var proxColor = ej.proximidade >= 70 ? 'var(--status-sobe)' : ej.proximidade >= 40 ? 'var(--brand-blue)' : 'var(--status-cai)';
-        html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\'' + ej.id + '\')">';
-        html += '<td style="font-weight:600;">' + ej.nome + '</td>';
-        html += '<td style="text-align:center;"><span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span></td>';
-        html += '<td style="text-align:right;font-weight:600;">' + moneyFmt(ej.faturamento ? ej.faturamento.alcancado : 0) + '</td>';
-        html += '<td style="text-align:center;font-weight:600;">' + (ej.csat && ej.csat.alcancado ? ej.csat.alcancado.toFixed(1) : '0.0') + '</td>';
-        html += '<td style="text-align:center;"><div style="display:flex;align-items:center;gap:6px;justify-content:center;">';
-        html += '<div class="progress-bar-bg" style="width:60px;"><div class="progress-bar-fill" style="width:' + Math.min(100, ej.proximidade) + '%;background:' + proxColor + ';"></div></div>';
-        html += '<span style="font-size:0.72rem;font-weight:700;color:' + proxColor + ';">' + Math.round(ej.proximidade) + '%</span></div></td>';
-        html += '<td style="text-align:center;"><span class="badge ' + sitClass + '">' + sitIcon + ' ' + ej.situacao + '</span></td>';
-        html += '<td style="text-align:center;">';
-        if (ej.trava !== 'Nenhuma') { html += '<span class="trava-tag">Trava: ' + ej.trava + '</span>'; }
-        else { html += '<span style="font-size:0.72rem;color:var(--text-muted);">-</span>'; }
-        html += '</td></tr>';
+        var fatAtual = ej.faturamento.alcancado || 0;
+        var fatColabAtual = ej.fcolab.alcancado || 0;
+        var csatAtual = ej.csat.alcancado || 0;
+        var ecmAtual = ej.engajamento.alcancado || 0;
+        var percColabAtual = fatAtual > 0 ? (fatColabAtual / fatAtual) : 0;
+        
+        var sitPrevista = ej.analisePrevista.situacao;
+        var clusterPrevisto = sitPrevista === 'SOBE' ? ej.cluster + 1 : sitPrevista === 'CAI' ? Math.max(1, ej.cluster - 1) : ej.cluster;
+        
+        var dotColor = sitPrevista === 'SOBE' ? 'var(--status-sobe)' : sitPrevista === 'CAI' ? 'var(--status-cai)' : 'var(--status-cai)';
+        var sitClass = sitPrevista === 'SOBE' ? 'badge-sobe' : sitPrevista === 'CAI' ? 'badge-cai' : 'badge-permanece';
+        
+        var formatFat = fatAtual === 0 ? '—' : moneyFmt(fatAtual);
+        var formatCsat = csatAtual === 0 ? '—' : csatAtual.toFixed(2);
+        
+        html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\\'' + ej.id + '\\')">';
+        html += '<td style="font-weight:600;font-size:0.8rem;">' + ej.nome + '</td>';
+        html += '<td style="text-align:right;font-size:0.8rem;color:var(--text-secondary);">' + formatFat + '</td>';
+        html += '<td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">' + formatCsat + '</td>';
+        html += '<td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">' + ecmAtual.toFixed(1) + '%</td>';
+        html += '<td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">' + (percColabAtual * 100).toFixed(1) + '%</td>';
+        html += '<td style="text-align:center;"><div style="width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin:auto;"></div></td>';
+        
+        var indiceFormatado = Number(ej.analiseAtual.indiceCalculado.toFixed(2));
+        html += '<td style="text-align:right;font-weight:700;color:var(--text-primary);">' + (indiceFormatado % 1 === 0 ? indiceFormatado : indiceFormatado.toFixed(2)) + '</td>';
+        
+        html += '<td style="text-align:center;font-size:0.8rem;font-weight:600;color:var(--text-secondary);">' + ej.cluster + ' ➞ ' + clusterPrevisto + '</td>';
+        html += '<td style="text-align:center;"><span class="badge ' + sitClass + '" style="font-size:0.7rem;">' + (sitPrevista === 'CAI' ? 'Desce' : sitPrevista === 'SOBE' ? 'Sobe' : 'Permanece') + '</span></td>';
+        html += '</tr>';
     });
+    
     var tbodyEl = document.getElementById('dash-table-body');
-    if (tbodyEl) tbodyEl.innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Nenhuma EJ encontrada</td></tr>';
+    if (tbodyEl) tbodyEl.innerHTML = html || '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);">Nenhuma EJ encontrada</td></tr>';
 }
 
 function renderSimulator(dados) {
