@@ -93,13 +93,25 @@ function updateHeaderKPIs(dados) {
         else perm++;
     });
     var sdeEl = document.getElementById('header-sde');
-    sdeEl.textContent = sde >= 0 ? '+' + sde.toFixed(2) : sde.toFixed(2);
-    sdeEl.className = 'kpi-value ' + (sde > 0 ? 'positive' : sde < 0 ? 'negative' : 'neutral');
-    document.getElementById('header-total-ejs').textContent = dados.length;
-    document.getElementById('header-faturamento').textContent = moneyFmt(totalFat);
-    document.getElementById('header-sobe').textContent = sobe;
-    document.getElementById('header-cai').textContent = cai;
-    document.getElementById('header-perm').textContent = perm;
+    if (sdeEl) {
+        sdeEl.textContent = sde >= 0 ? '+' + sde.toFixed(2) : sde.toFixed(2);
+        sdeEl.className = 'kpi-value ' + (sde > 0 ? 'positive' : sde < 0 ? 'negative' : 'neutral');
+    }
+    
+    var totalEjsEl = document.getElementById('header-total-ejs');
+    if (totalEjsEl) totalEjsEl.textContent = dados.length;
+    
+    var fatEl = document.getElementById('header-faturamento');
+    if (fatEl) fatEl.textContent = moneyFmt(totalFat);
+    
+    var sobeEl = document.getElementById('header-sobe');
+    if (sobeEl) sobeEl.textContent = sobe;
+    
+    var caiEl = document.getElementById('header-cai');
+    if (caiEl) caiEl.textContent = cai;
+    
+    var permEl = document.getElementById('header-perm');
+    if (permEl) permEl.textContent = perm;
 }
 
 function renderSidebar(dados, searchTerm) {
