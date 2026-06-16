@@ -179,6 +179,8 @@ function renderFarolTable() {
         tr.style.cursor = 'pointer';
         tr.onclick = () => openPredictionModal(ej.id);
         
+        var dotColor = sitPrevista === 'SOBE' ? 'var(--status-sobe)' : sitPrevista === 'CAI' ? 'var(--status-cai)' : 'var(--brand-blue)';
+
         var htmlStr = '';
         htmlStr += '<td>' + ej.nome + '</td>';
         htmlStr += '<td style="text-align:center;"><span class="badge badge-c' + ej.cluster + '">C' + ej.cluster + '</span></td>';
@@ -186,7 +188,7 @@ function renderFarolTable() {
         htmlStr += '<td style="text-align:right; font-weight:500; color:var(--text-muted);">' + moneyFmt(ej.analiseAtual.indiceCalculado).replace('R$ ','') + '</td>';
         htmlStr += '<td style="text-align:right; font-weight:500; color:var(--text-secondary);">' + moneyFmt(indiceMinimoParaSubir).replace('R$ ','') + '</td>';
         htmlStr += '<td style="text-align:center;"><span class="badge badge-' + sitAtual.toLowerCase() + '">' + sitAtual + '</span></td>';
-        htmlStr += '<td style="text-align:center;"><span class="badge badge-' + sitPrevista.toLowerCase() + '">' + sitPrevista + '</span></td>';
+        htmlStr += '<td style="text-align:center;"><div style="width:10px;height:10px;border-radius:50%;background:' + dotColor + ';margin:auto;"></div></td>';
         tr.innerHTML = htmlStr;
         tbody.appendChild(tr);
     });
@@ -221,49 +223,49 @@ function openPredictionModal(id) {
         var borderColor = situacao === 'SOBE' ? 'var(--status-sobe)' : situacao === 'CAI' ? 'var(--status-cai)' : 'var(--brand-blue)';
         
         return `
-            <div style="flex:1;min-width:300px;background:rgba(255,255,255,0.02);border-radius:var(--radius-lg);padding:24px;border-top:4px solid \${borderColor};display:flex;flex-direction:column;gap:16px;">
-                <h3 style="font-size:1.1rem;font-weight:800;text-align:center;color:var(--text-primary);margin-bottom:8px;">\${title}</h3>
+            <div style="flex:1;min-width:300px;background:rgba(255,255,255,0.02);border-radius:var(--radius-lg);padding:24px;border-top:4px solid ${borderColor};display:flex;flex-direction:column;gap:16px;">
+                <h3 style="font-size:1.1rem;font-weight:800;text-align:center;color:var(--text-primary);margin-bottom:8px;">${title}</h3>
                 
                 <div style="text-align:center;margin-bottom:16px;">
                     <p style="font-size:0.75rem;font-weight:600;opacity:0.8;">O Cluster da EJ é:</p>
-                    <div style="font-size:3.5rem;font-weight:900;line-height:1;margin:4px 0;color:\${borderColor};">\${clusterFinal}</div>
-                    <div style="font-size:0.9rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;">\${nomeCluster}</div>
-                    <div style="margin-top:8px;"><span class="badge badge-\${situacao.toLowerCase()}">\${situacao}</span></div>
+                    <div style="font-size:3.5rem;font-weight:900;line-height:1;margin:4px 0;color:${borderColor};">${clusterFinal}</div>
+                    <div style="font-size:0.9rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${nomeCluster}</div>
+                    <div style="margin-top:8px;"><span class="badge badge-${situacao.toLowerCase()}">${situacao}</span></div>
                 </div>
                 
                 <div style="display:flex;flex-direction:column;gap:8px;background:rgba(0,0,0,0.15);padding:16px;border-radius:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="font-size:0.75rem;color:var(--text-muted);">Faturamento</span>
-                        <span style="font-size:0.85rem;font-weight:700;">\${moneyFmt(fat)}</span>
+                        <span style="font-size:0.85rem;font-weight:700;">${moneyFmt(fat)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="font-size:0.75rem;color:var(--text-muted);">CSAT</span>
-                        <span style="font-size:0.85rem;font-weight:700;">\${csat.toFixed(2)}</span>
+                        <span style="font-size:0.85rem;font-weight:700;">${csat.toFixed(2)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="font-size:0.75rem;color:var(--text-muted);">Engajamento</span>
-                        <span style="font-size:0.85rem;font-weight:700;">\${eng.toFixed(2)}%</span>
+                        <span style="font-size:0.85rem;font-weight:700;">${eng.toFixed(2)}%</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span style="font-size:0.75rem;color:var(--text-muted);">Fat. Colaborativo</span>
-                        <span style="font-size:0.85rem;font-weight:700;">\${moneyFmt(fatColab)}</span>
+                        <span style="font-size:0.85rem;font-weight:700;">${moneyFmt(fatColab)}</span>
                     </div>
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;">
                         <span style="font-size:0.75rem;color:var(--brand-pink);font-weight:700;">Índice</span>
-                        <span style="font-size:1.1rem;font-weight:900;">\${moneyFmt(analise.indiceCalculado).replace('R$ ','')}</span>
+                        <span style="font-size:1.1rem;font-weight:900;">${moneyFmt(analise.indiceCalculado).replace('R$ ','')}</span>
                     </div>
                 </div>
                 
-                <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:auto;padding-top:16px;">\${analise.detalhes}</p>
-                \${analise.trava !== 'Nenhuma' ? \`<p style="font-size:0.8rem;color:var(--status-cai);text-align:center;font-weight:600;">Trava Crítica: \${analise.trava}</p>\` : ''}
+                <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:auto;padding-top:16px;">${analise.detalhes}</p>
+                ${analise.trava !== 'Nenhuma' ? '<p style="font-size:0.8rem;color:var(--status-cai);text-align:center;font-weight:600;">Trava Crítica: ' + analise.trava + '</p>' : ''}
             </div>
         `;
     }
 
     var html = `
     <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
-        \${buildCard('Cenário Atual', fatAtual, fatColabAtual, percColabAtual, csatAtual, engAtual, ej.analiseAtual)}
-        \${buildCard('Expectativa para Dezembro', fatMeta, fatColabMeta, percColabMeta, csatMeta, engMeta, ej.analisePrevista)}
+        ${buildCard('Cenário Atual', fatAtual, fatColabAtual, percColabAtual, csatAtual, engAtual, ej.analiseAtual)}
+        ${buildCard('Expectativa para Dezembro', fatMeta, fatColabMeta, percColabMeta, csatMeta, engMeta, ej.analisePrevista)}
     </div>
 
     
@@ -559,6 +561,12 @@ function renderApostasCards(dados) {
         html += '<span style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);">Proximidade</span>';
         html += '<span style="font-size:0.72rem;font-weight:700;color:' + proxColor + ';">' + Math.round(ej.proximidade) + '%</span></div>';
         html += '<div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:' + Math.min(100, ej.proximidade) + '%;background:' + proxColor + ';"></div></div></div>';
+        
+        if (ej.justificativa) {
+            html += '<div style="margin-bottom:12px;background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:4px;border-left:3px solid ' + cat.color + ';">';
+            html += '<span style="font-size:0.75rem;color:var(--text-secondary);line-height:1.4;">' + ej.justificativa + '</span></div>';
+        }
+
         if (ej.trava !== 'Nenhuma') {
             html += '<div style="margin-bottom:12px;"><span class="trava-tag">Trava: ' + ej.trava + '</span>';
             if (ej.travas && ej.travas.length > 0 && ej.travas[0].falta) html += '<span style="font-size:0.68rem;color:var(--text-muted);margin-left:8px;">' + ej.travas[0].falta + '</span>';

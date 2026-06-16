@@ -366,11 +366,26 @@ function calcularSituacaoEJ(clusterAtual, metricas) {
     else if (clusterAtual === 3) pontosProximoCluster = 61000000.01;
     else if (clusterAtual === 4) pontosProximoCluster = 130000000.01;
 
+    let pontosParaManterAtual = 0;
+    if (clusterAtual === 2) pontosParaManterAtual = 12000000.01;
+    else if (clusterAtual === 3) pontosParaManterAtual = 24000000.01;
+    else if (clusterAtual === 4) pontosParaManterAtual = 61000000.01;
+    else if (clusterAtual === 5) pontosParaManterAtual = 130000000.01;
+
     let proximidade = 100;
     let pontosFaltantes = 0;
-    if (clusterAtual < 5 && indiceCalculado < pontosProximoCluster) {
-        proximidade = (indiceCalculado / pontosProximoCluster) * 100;
-        pontosFaltantes = pontosProximoCluster - indiceCalculado;
+    
+    if (situacao === 'CAI') {
+        // Se a EJ cai, a proximidade se refere à meta de manter o cluster atual
+        proximidade = pontosParaManterAtual > 0 ? (indiceCalculado / pontosParaManterAtual) * 100 : 0;
+        pontosFaltantes = Math.max(0, pontosParaManterAtual - indiceCalculado);
+    } else if (situacao === 'PERMANECE' && clusterAtual < 5) {
+        // Se ela permanece, a proximidade é em relação a subir para o próximo
+        proximidade = pontosProximoCluster > 0 ? (indiceCalculado / pontosProximoCluster) * 100 : 0;
+        pontosFaltantes = Math.max(0, pontosProximoCluster - indiceCalculado);
+    } else {
+        proximidade = 100;
+        pontosFaltantes = 0;
     }
 
     let trava = 'Nenhuma';
@@ -388,7 +403,32 @@ function calcularSituacaoEJ(clusterAtual, metricas) {
     if (situacao === 'SOBE') impactoSDE = peso;
     if (situacao === 'CAI') impactoSDE = -peso;
 
-    let catAposta = proximidade >= 70 && situacao !== 'SOBE' ? 'alto' : (situacao === 'CAI' ? 'risco' : 'potencial');
+    // MATRIZ GUT / ROI de Aposta
+    let gravidade = peso; // Impacto no SDE (0.15 a 0.30)
+    // Esforço normalizado (quanto menor os pontos faltantes, maior a urgencia/facilidade)
+    let esforcoInverso = pontosFaltantes > 0 ? (1000000 / pontosFaltantes) : 0; 
+    let roiScore = (gravidade * esforcoInverso);
+    
+    let catAposta = 'potencial';
+    let justificativa = '';
+
+    if (situacao === 'CAI') {
+        if (roiScore > 0.05) {
+            catAposta = 'alto';
+            justificativa = `Alvo Crítico: Previne a perda de ${peso} SDE com baixo esforço (${moneyFmt(pontosFaltantes)} pts faltantes). Alto Retorno (Quick Win).`;
+        } else {
+            catAposta = 'risco';
+            justificativa = `Aposta de Risco: Previne a perda de ${peso} SDE, mas exige alto esforço (${moneyFmt(pontosFaltantes)} pts).`;
+        }
+    } else if (situacao === 'PERMANECE') {
+        if (roiScore > 0.05 && clusterAtual < 5) {
+            catAposta = 'alto';
+            justificativa = `Quick Win: Subir de cluster garante +${peso} SDE com baixo esforço relativo (${moneyFmt(pontosFaltantes)} pts).`;
+        } else {
+            catAposta = 'potencial';
+            justificativa = `Desenvolvimento: Esforço alto (${moneyFmt(pontosFaltantes)} pts) para ganho de +${peso} SDE.`;
+        }
+    }
 
     return {
         situacao: situacao,
@@ -396,7 +436,9 @@ function calcularSituacaoEJ(clusterAtual, metricas) {
         trava: trava,
         travas: [trava],
         impactoSDE: impactoSDE,
+        roiScore: roiScore,
         categoriaAposta: catAposta,
+        justificativa: justificativa,
         indiceCalculado: indiceCalculado,
         pontosFaltantes: pontosFaltantes,
         pontosProximoCluster: pontosProximoCluster,
