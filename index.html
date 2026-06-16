@@ -12,7 +12,7 @@
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="stylesheet" href="styles.css?v=6">
     <style>
         .loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -342,12 +342,13 @@
                                 <table class="data-table" id="sim-table">
                                     <thead>
                                         <tr>
-                                            <th>Empresa Júnior</th>
-                                            <th style="text-align:center;">Cluster</th>
-                                            <th style="text-align:center;">Peso</th>
-                                            <th style="text-align:center;">Situação Original</th>
-                                            <th style="text-align:center;">Situação Simulada</th>
-                                            <th style="text-align:center;">Impacto no SDE</th>
+                                            <th style="text-align:left;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Nome</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Cluster</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Peso</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Sit. Original</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Sit. Simulada</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Farol</th>
+                                            <th style="text-align:center;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;">Impacto SDE</th>
                                         </tr>
                                     </thead>
                                     <tbody id="sim-table-body">
@@ -566,9 +567,9 @@
         </div>
     </div>
 
-    <script src="native_engine.js?v=5"></script>
-    <script src="app.js?v=5"></script>
-    <link rel="stylesheet" href="styles.css?v=5">
+    <script src="native_engine.js?v=6"></script>
+    <script src="app.js?v=6"></script>
+    <link rel="stylesheet" href="styles.css?v=6">
 </body>
 
 </html>

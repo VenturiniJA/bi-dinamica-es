@@ -179,15 +179,15 @@ function renderFarolTable() {
         tr.style.cursor = 'pointer';
         tr.onclick = () => openPredictionModal(ej.id);
         
-        tr.innerHTML = \`
-            <td>\${ej.nome}</td>
-            <td style="text-align:center;"><span class="badge badge-c\${ej.cluster}">C\${ej.cluster}</span></td>
-            <td style="text-align:right; font-weight:600; color:var(--text-primary);">\${moneyFmt(ej.analisePrevista.indiceCalculado).replace('R$ ','')}</td>
-            <td style="text-align:right; font-weight:500; color:var(--text-muted);">\${moneyFmt(ej.analiseAtual.indiceCalculado).replace('R$ ','')}</td>
-            <td style="text-align:right; font-weight:500; color:var(--text-secondary);">\${moneyFmt(indiceMinimoParaSubir).replace('R$ ','')}</td>
-            <td style="text-align:center;"><span class="badge badge-\${sitAtual.toLowerCase()}">\${sitAtual}</span></td>
-            <td style="text-align:center;"><span class="badge badge-\${sitPrevista.toLowerCase()}">\${sitPrevista}</span></td>
-        \`;
+        var htmlStr = '';
+        htmlStr += '<td>' + ej.nome + '</td>';
+        htmlStr += '<td style="text-align:center;"><span class="badge badge-c' + ej.cluster + '">C' + ej.cluster + '</span></td>';
+        htmlStr += '<td style="text-align:right; font-weight:600; color:var(--text-primary);">' + moneyFmt(ej.analisePrevista.indiceCalculado).replace('R$ ','') + '</td>';
+        htmlStr += '<td style="text-align:right; font-weight:500; color:var(--text-muted);">' + moneyFmt(ej.analiseAtual.indiceCalculado).replace('R$ ','') + '</td>';
+        htmlStr += '<td style="text-align:right; font-weight:500; color:var(--text-secondary);">' + moneyFmt(indiceMinimoParaSubir).replace('R$ ','') + '</td>';
+        htmlStr += '<td style="text-align:center;"><span class="badge badge-' + sitAtual.toLowerCase() + '">' + sitAtual + '</span></td>';
+        htmlStr += '<td style="text-align:center;"><span class="badge badge-' + sitPrevista.toLowerCase() + '">' + sitPrevista + '</span></td>';
+        tr.innerHTML = htmlStr;
         tbody.appendChild(tr);
     });
 }
@@ -220,7 +220,7 @@ function openPredictionModal(id) {
         var nomeCluster = ['INCUBADA', 'INCUBADA', 'OPERAÇÃO', 'TRAÇÃO', 'TRAÇÃO', 'ALTO CRESCIMENTO'][clusterFinal] || 'CLUSTER';
         var borderColor = situacao === 'SOBE' ? 'var(--status-sobe)' : situacao === 'CAI' ? 'var(--status-cai)' : 'var(--brand-blue)';
         
-        return \`
+        return `
             <div style="flex:1;min-width:300px;background:rgba(255,255,255,0.02);border-radius:var(--radius-lg);padding:24px;border-top:4px solid \${borderColor};display:flex;flex-direction:column;gap:16px;">
                 <h3 style="font-size:1.1rem;font-weight:800;text-align:center;color:var(--text-primary);margin-bottom:8px;">\${title}</h3>
                 
@@ -257,10 +257,10 @@ function openPredictionModal(id) {
                 <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:auto;padding-top:16px;">\${analise.detalhes}</p>
                 \${analise.trava !== 'Nenhuma' ? \`<p style="font-size:0.8rem;color:var(--status-cai);text-align:center;font-weight:600;">Trava Crítica: \${analise.trava}</p>\` : ''}
             </div>
-        \`;
+        `;
     }
 
-    var html = \`
+    var html = `
     <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
         \${buildCard('Cenário Atual', fatAtual, fatColabAtual, percColabAtual, csatAtual, engAtual, ej.analiseAtual)}
         \${buildCard('Expectativa para Dezembro', fatMeta, fatColabMeta, percColabMeta, csatMeta, engMeta, ej.analisePrevista)}
@@ -379,7 +379,7 @@ function renderDashboardTable() {
         var formatFat = fatAtual === 0 ? '—' : moneyFmt(fatAtual);
         var formatCsat = csatAtual === 0 ? '—' : csatAtual.toFixed(2);
         
-        html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\\'' + ej.id + '\\')">';
+        html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\'' + ej.id + '\')">';
         html += '<td style="font-weight:600;font-size:0.8rem;">' + ej.nome + '</td>';
         html += '<td style="text-align:right;font-size:0.8rem;color:var(--text-secondary);">' + formatFat + '</td>';
         html += '<td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">' + formatCsat + '</td>';
@@ -413,7 +413,7 @@ function updateSimSDE() {
     var origEl = document.getElementById('sim-sde-original');
     origEl.textContent = original.sde >= 0 ? '+' + original.sde.toFixed(2) : original.sde.toFixed(2);
     origEl.className = 'kpi-value ' + (original.sde > 0 ? 'positive' : original.sde < 0 ? 'negative' : 'neutral');
-    var simEl = document.getElementById('sim-sde-simulado');
+        var simEl = document.getElementById('sim-sde-simulado');
     simEl.textContent = simulado.sde >= 0 ? '+' + simulado.sde.toFixed(2) : simulado.sde.toFixed(2);
     simEl.className = 'kpi-value ' + (simulado.sde > 0 ? 'positive' : simulado.sde < 0 ? 'negative' : 'neutral');
     var deltaEl = document.getElementById('sim-sde-delta');
@@ -428,7 +428,7 @@ function renderSimTable() {
         var cc = CLUSTER_COLORS[ej.cluster];
         var peso = PESOS_CLUSTER[ej.cluster];
         var original = window.allEJs.find(function(e) { return e.id === ej.id; });
-        var origSit = original ? original.situacao : ej.situacaoOriginal;
+        var origSit = original ? original.analisePrevista.situacao : ej.situacaoOriginal;
         var changed = ej.situacao !== origSit;
         var impacto = 0;
         if (changed) {
@@ -439,8 +439,11 @@ function renderSimTable() {
         }
         var origBadge = origSit === 'SOBE' ? 'badge-sobe' : origSit === 'CAI' ? 'badge-cai' : 'badge-permanece';
         var origIcon = origSit === 'SOBE' ? '+' : origSit === 'CAI' ? '-' : '=';
+        
+        var dotColor = ej.situacao === 'SOBE' ? 'var(--status-sobe)' : ej.situacao === 'CAI' ? 'var(--status-cai)' : 'var(--status-cai)';
+        
         html += '<tr data-ej-id="' + ej.id + '" style="' + (changed ? 'background:rgba(59,130,246,0.06);' : '') + '">';
-        html += '<td style="font-weight:600;">' + ej.nome + '</td>';
+        html += '<td style="font-weight:600;font-size:0.8rem;">' + ej.nome + '</td>';
         html += '<td style="text-align:center;"><span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span></td>';
         html += '<td style="text-align:center;font-weight:700;color:' + cc.color + ';">' + peso.toFixed(2) + '</td>';
         html += '<td style="text-align:center;"><span class="badge ' + origBadge + '">' + origIcon + ' ' + origSit + '</span></td>';
@@ -448,11 +451,12 @@ function renderSimTable() {
         html += '<option value="SOBE"' + (ej.situacao === 'SOBE' ? ' selected' : '') + '>SOBE</option>';
         html += '<option value="PERMANECE"' + (ej.situacao === 'PERMANECE' ? ' selected' : '') + '>PERMANECE</option>';
         html += '<option value="CAI"' + (ej.situacao === 'CAI' ? ' selected' : '') + '>CAI</option></select></td>';
-        html += '<td style="text-align:center;font-weight:700;' + (impacto > 0 ? 'color:var(--status-sobe);' : impacto < 0 ? 'color:var(--status-cai);' : 'color:var(--text-muted);') + '">';
-        html += impacto !== 0 ? (impacto > 0 ? '+' : '') + impacto.toFixed(2) : '-';
-        html += '</td></tr>';
+        html += '<td style="text-align:center;"><div style="width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin:auto;"></div></td>';
+        html += '<td style="text-align:center;font-weight:700;color:' + (impacto > 0 ? 'var(--status-sobe)' : impacto < 0 ? 'var(--status-cai)' : 'var(--text-muted)') + ';">';
+        html += (impacto > 0 ? '+' : '') + impacto.toFixed(2) + '</td></tr>';
     });
-    document.getElementById('sim-table-body').innerHTML = html;
+    var tbodyEl = document.getElementById('sim-table-body');
+    if (tbodyEl) tbodyEl.innerHTML = html;
 }
 
 function onSimChange(select) {
