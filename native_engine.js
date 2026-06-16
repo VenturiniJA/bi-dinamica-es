@@ -203,11 +203,11 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const colMoEcm = findColIdx(keysMon, ["ECM"]);
 
     ejsData.forEach((row, i) => {
-        // Validação da Federação
-        // Para garantir que a base de teste (Brasil Junior inteira) seja renderizada, 
-        // vamos permitir todas as EJs, pois o cliente usou a base nacional como teste.
-        // O branding continua sendo JUNIORES ES.
+        // Validação da Federação - Foco estrito na JUNIORES ES
         const fed = colFed !== -1 ? String(row[keysEJs[colFed]]).trim().toUpperCase() : '';
+        if (colFed !== -1 && !fed.includes('JUNIORES') && !fed.includes('ES') && fed !== '') {
+            return; // Bloqueia tudo que não for do Espírito Santo/Juniores
+        }
 
         const nome = colNomeEJ !== -1 ? String(row[keysEJs[colNomeEJ]]).trim() : '';
         const sigla = colSigla !== -1 ? String(row[keysEJs[colSigla]]).trim() : nome;
@@ -302,128 +302,86 @@ function buildStatisticalModel(ejsData, accumData, monData) {
 // ============================================
 // CALCULAR SITUAÇÃO E PROXIMIDADE DE UMA EJ
 // ============================================
-function calcularSituacaoEJ(cluster, metricas) {
-    const criterios = CLUSTER_CRITERIOS[cluster];
-    if (!criterios) return { situacao: 'PERMANECE', proximidade: 0, trava: 'Dados insuficientes', travas: [], categoriaAposta: 'risco', impactoSDE: 0, detalhes: {} };
+function calcularSituacaoEJ(clusterAtual, metricas) {
+    let fat = metricas.fatProjetado || metricas.faturamento || 0;
+    let fatColab = metricas.fcolab || 0; // Faturamento colaborativo (R$)
+    let csat = metricas.csat || 0;
+    let engajamento = metricas.engajamento || 0;
+    let seloEJ = metricas.seloEJ !== false; // Assumimos true por padrão se não for explícito
+    let impacto = metricas.impacto === true;
 
-    const PESOS = { 1: 0.30, 2: 0.25, 3: 0.15, 4: 0.15, 5: 0.15 };
-    const peso = PESOS[cluster];
+    // Fórmula: Faturamento x CSAT x (1 + Eng. MEJ (%)) x (1 + % Fat. Colab.) x 100 = Índice do Cluster
+    let percColab = fat > 0 ? (fatColab / fat) : 0;
+    let indiceCalculado = fat * csat * (1 + (engajamento / 100)) * (1 + percColab) * 100;
 
-    const detalhes = {};
+    // Regras da Régua de Cluster
+    function getClusterMeta(indice) {
+        if (indice <= 12000000) return 1;
+        if (indice <= 24000000) return 2;
+        if (indice <= 61000000) return 3;
+        if (indice <= 130000000) return 4;
+        return 5;
+    }
+
+    let novoCluster = getClusterMeta(indiceCalculado);
+
+    // Restrições aplicadas:
+    // 1. Para subir de cluster, deve estar em conformidade com o Selo EJ.
+    if (!seloEJ && novoCluster > clusterAtual) novoCluster = clusterAtual;
+    // 2. Sem faturamento = rebaixada pro Cluster 1.
+    if (fat <= 0) novoCluster = 1;
+    // 3. Só pode subir 1 cluster por vez.
+    if (novoCluster > clusterAtual + 1) novoCluster = clusterAtual + 1;
+    // 4. Cluster 5 exige Projeto de Impacto.
+    if (novoCluster === 5 && !impacto && clusterAtual < 5) novoCluster = 4;
+
+    // Determinar Situação
     let situacao = 'PERMANECE';
-    let proximidade = 50;
-    let trava = null;
-    let travas = [];
+    if (novoCluster > clusterAtual) situacao = 'SOBE';
+    else if (novoCluster < clusterAtual) situacao = 'CAI';
 
-    // ---- Proximidade para SUBIR ----
-    let proxSubir = 100;
-    if (cluster < 5 && criterios.fatSubir) {
-        // Faturamento (peso 40%)
-        const fatPerc = criterios.fatSubir > 0 ? Math.min(100, (metricas.fatProjetado / criterios.fatSubir) * 100) : 100;
-        detalhes.fatPercSubir = fatPerc;
-        detalhes.fatFalta = Math.max(0, criterios.fatSubir - metricas.fatProjetado);
+    // Proximidade do próximo cluster
+    let pontosProximoCluster = 0;
+    if (clusterAtual === 1) pontosProximoCluster = 12000000.01;
+    else if (clusterAtual === 2) pontosProximoCluster = 24000000.01;
+    else if (clusterAtual === 3) pontosProximoCluster = 61000000.01;
+    else if (clusterAtual === 4) pontosProximoCluster = 130000000.01;
 
-        // CSAT (peso 30%)
-        const csatPerc = criterios.csatSubir > 0 ? Math.min(100, (metricas.csat / criterios.csatSubir) * 100) : 100;
-        detalhes.csatPercSubir = csatPerc;
-        detalhes.csatFalta = Math.max(0, criterios.csatSubir - metricas.csat);
-
-        // ECM (peso 20%)
-        const ecmPerc = criterios.ecmSubir > 0 ? Math.min(100, (metricas.ecm / criterios.ecmSubir) * 100) : 100;
-        detalhes.ecmPercSubir = ecmPerc;
-
-        // Fcolab (peso 10%)
-        const fcolabPerc = criterios.fcolabSubir > 0 ? Math.min(100, (metricas.fcolab / criterios.fcolabSubir) * 100) : 100;
-        detalhes.fcolabPercSubir = fcolabPerc;
-
-        // Proximidade ponderada para subir
-        proxSubir = (fatPerc * 0.4) + (csatPerc * 0.3) + (ecmPerc * 0.2) + (fcolabPerc * 0.1);
-
-        // Identificar travas (indicadores abaixo de 100%)
-        const indicadores = [
-            { nome: 'Faturamento', perc: fatPerc, falta: `Faltam ${moneyFmt(detalhes.fatFalta)}` },
-            { nome: 'CSAT', perc: csatPerc, falta: `Falta ${detalhes.csatFalta.toFixed(1)} pontos` },
-            { nome: 'ECM', perc: ecmPerc, falta: `Meta: ${criterios.ecmSubir}%` },
-            { nome: 'Fat. Colaborativo', perc: fcolabPerc, falta: `Meta: ${criterios.fcolabSubir}%` }
-        ];
-
-        indicadores.sort((a, b) => a.perc - b.perc);
-        travas = indicadores.filter(ind => ind.perc < 100);
-        trava = travas.length > 0 ? travas[0].nome : null;
+    let proximidade = 100;
+    let pontosFaltantes = 0;
+    if (clusterAtual < 5 && indiceCalculado < pontosProximoCluster) {
+        proximidade = (indiceCalculado / pontosProximoCluster) * 100;
+        pontosFaltantes = pontosProximoCluster - indiceCalculado;
     }
 
-    // ---- Proximidade para MANTER (risco de cair) ----
-    let proxManter = 100;
-    const fatMantPerc = criterios.fatMinimo > 0 ? Math.min(100, (metricas.fatProjetado / criterios.fatMinimo) * 100) : 100;
-    const csatMantPerc = criterios.csatMinimo > 0 ? Math.min(100, (metricas.csat / criterios.csatMinimo) * 100) : 100;
-    const ecmMantPerc = criterios.ecmMinimo > 0 ? Math.min(100, (metricas.ecm / criterios.ecmMinimo) * 100) : 100;
-    const fcolabMantPerc = criterios.fcolabMinimo > 0 ? Math.min(100, (metricas.fcolab / criterios.fcolabMinimo) * 100) : 100;
-    
-    proxManter = Math.min(fatMantPerc, csatMantPerc, ecmMantPerc, fcolabMantPerc);
-    detalhes.proxManter = proxManter;
-    
-    if (proxManter < 100 && !trava) {
-        if (fatMantPerc < 100) trava = 'Faturamento Mínimo';
-        else if (csatMantPerc < 100) trava = 'CSAT Mínimo';
-        else if (ecmMantPerc < 100) trava = 'ECM Mínimo';
-        else if (fcolabMantPerc < 100) trava = 'Fat. Colaborativo Mínimo';
+    let trava = 'Nenhuma';
+    if (situacao !== 'SOBE') {
+        if (fat <= 0) trava = 'Sem Faturamento';
+        else if (novoCluster > clusterAtual && !seloEJ) trava = 'Falta Selo EJ';
+        else if (novoCluster === 5 && !impacto) trava = 'Falta Projeto Impacto';
+        else if (indiceCalculado < pontosProximoCluster) trava = 'Pontos Insuficientes';
     }
 
-    // ---- Determinar situação ----
-    if (cluster === 5) {
-        // Cluster 5: só pode manter ou cair
-        if (proxManter >= 100) {
-            situacao = 'PERMANECE';
-            proximidade = proxManter;
-        } else {
-            situacao = 'CAI';
-            proximidade = proxManter;
-            trava = trava || 'Indicadores abaixo do mínimo para C5';
-        }
-    } else {
-        // Clusters 1-4
-        if (travas.length === 0 && proxSubir >= 100) {
-            situacao = 'SOBE';
-            proximidade = 100;
-        } else if (proxManter < 100) {
-            situacao = 'CAI';
-            proximidade = proxManter;
-            if (!trava) trava = 'Abaixo do mínimo para manter';
-        } else {
-            situacao = 'PERMANECE';
-            proximidade = proxSubir; // mostra quão perto de subir
-        }
-    }
-
-    // ---- Classificar categoria de aposta ----
-    let categoriaAposta = 'risco';
-    if (situacao === 'SOBE') {
-        categoriaAposta = 'alto'; // já vai subir
-    } else if (situacao === 'PERMANECE' && proxSubir >= 70) {
-        categoriaAposta = 'alto'; // perto de subir → alto retorno
-    } else if (situacao === 'PERMANECE' && proxSubir >= 40) {
-        categoriaAposta = 'potencial';
-    } else if (situacao === 'CAI') {
-        categoriaAposta = 'alerta'; // risco de queda
-    } else {
-        categoriaAposta = 'risco'; // permanece mas longe de subir
-    }
-
-    // Impacto potencial no SDE
     let impactoSDE = 0;
+    const PESOS = { 1: 0.30, 2: 0.25, 3: 0.15, 4: 0.15, 5: 0.15 };
+    const peso = PESOS[clusterAtual] || 0.15;
+    
     if (situacao === 'SOBE') impactoSDE = peso;
-    else if (situacao === 'CAI') impactoSDE = -peso;
-    // Para "permanece", o impacto é o que PODERIA ganhar se fizesse subir
-    else impactoSDE = peso; // potencial
+    if (situacao === 'CAI') impactoSDE = -peso;
+
+    let catAposta = proximidade >= 70 && situacao !== 'SOBE' ? 'alto' : (situacao === 'CAI' ? 'risco' : 'potencial');
 
     return {
-        situacao,
-        proximidade: Math.round(proximidade * 10) / 10,
-        trava: trava || 'Nenhuma',
-        travas,
-        categoriaAposta,
-        impactoSDE: Math.round(impactoSDE * 100) / 100,
-        detalhes
+        situacao: situacao,
+        proximidade: Math.min(100, Math.max(0, proximidade)),
+        trava: trava,
+        travas: [trava],
+        impactoSDE: impactoSDE,
+        categoriaAposta: catAposta,
+        indiceCalculado: indiceCalculado,
+        pontosFaltantes: pontosFaltantes,
+        pontosProximoCluster: pontosProximoCluster,
+        detalhes: 'Índice de Cluster: ' + moneyFmt(indiceCalculado) + ' (Faltam ' + moneyFmt(pontosFaltantes) + ' pontos)'
     };
 }
 
