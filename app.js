@@ -53,8 +53,10 @@ function initPlatform(dados) {
         renderSidebar(dados, this.value);
     });
     var totalAlto = dados.filter(function(e) { return e.categoriaAposta === 'alto'; }).length;
-    document.getElementById('tab-badge-sim').textContent = dados.length;
-    document.getElementById('tab-badge-apostas').textContent = totalAlto;
+    var badgeSimEl = document.getElementById('tab-badge-sim');
+    if (badgeSimEl) badgeSimEl.textContent = dados.length;
+    var badgeApostasEl = document.getElementById('tab-badge-apostas');
+    if (badgeApostasEl) badgeApostasEl.textContent = totalAlto;
     
     // Render raw datasets if available
     renderRawDataTables();
@@ -117,7 +119,8 @@ function updateHeaderKPIs(dados) {
 function renderSidebar(dados, searchTerm) {
     var container = document.getElementById('sidebar-list');
     var filtered = searchTerm ? dados.filter(function(e) { return e.nome.toLowerCase().includes(searchTerm.toLowerCase()); }) : dados;
-    document.getElementById('sidebar-count').textContent = filtered.length;
+    var countEl = document.getElementById('sidebar-count');
+    if (countEl) countEl.textContent = filtered.length;
     var html = '';
     for (var c = 1; c <= 5; c++) {
         var clusterEjs = filtered.filter(function(e) { return e.cluster === c; });
@@ -135,7 +138,7 @@ function renderSidebar(dados, searchTerm) {
         });
         html += '</div>';
     }
-    container.innerHTML = html || '<div class="empty-state"><p style="font-size:0.78rem;">Nenhuma EJ</p></div>';
+    if (container) container.innerHTML = html || '<div class="empty-state"><p style="font-size:0.78rem;">Nenhuma EJ</p></div>';
 }
 
 function highlightEJ(id) {
@@ -180,17 +183,22 @@ function renderDashboard(dados) {
     var sde = result.sde;
     var breakdown = result.breakdown;
     var sdeValEl = document.getElementById('dash-sde-value');
-    sdeValEl.textContent = sde >= 0 ? '+' + sde.toFixed(2) : sde.toFixed(2);
-    sdeValEl.style.color = sde > 0 ? 'var(--status-sobe)' : sde < 0 ? 'var(--status-cai)' : 'var(--text-primary)';
+    if (sdeValEl) {
+        sdeValEl.textContent = sde >= 0 ? '+' + sde.toFixed(2) : sde.toFixed(2);
+        sdeValEl.style.color = sde > 0 ? 'var(--status-sobe)' : sde < 0 ? 'var(--status-cai)' : 'var(--text-primary)';
+    }
     var statusEl = document.getElementById('dash-sde-status');
-    if (sde > 0) { statusEl.className = 'badge badge-sobe'; statusEl.textContent = 'POSITIVO'; }
-    else if (sde < 0) { statusEl.className = 'badge badge-cai'; statusEl.textContent = 'NEGATIVO'; }
-    else { statusEl.className = 'badge badge-permanece'; statusEl.textContent = 'NEUTRO'; }
+    if (statusEl) {
+        if (sde > 0) { statusEl.className = 'badge badge-sobe'; statusEl.textContent = 'POSITIVO'; }
+        else if (sde < 0) { statusEl.className = 'badge badge-cai'; statusEl.textContent = 'NEGATIVO'; }
+        else { statusEl.className = 'badge badge-permanece'; statusEl.textContent = 'NEUTRO'; }
+    }
 
     var bHTML = '';
     for (var c = 1; c <= 5; c++) {
         var b = breakdown[c] || { sobe:0, cai:0, perm:0, total:0, contrib:0 };
         var cc = CLUSTER_COLORS[c];
+        if (!cc) continue;
         var sw = b.total > 0 ? (b.sobe/b.total)*100 : 0;
         var cw = b.total > 0 ? (b.cai/b.total)*100 : 0;
         bHTML += '<div class="cluster-row"><span class="cluster-badge c'+c+'">'+cc.name+'</span>';
@@ -201,12 +209,14 @@ function renderDashboard(dados) {
         bHTML += '<span style="font-size:0.72rem;font-weight:700;color:var(--status-cai);text-align:center;">-'+b.cai+'</span>';
         bHTML += '<span style="font-size:0.82rem;font-weight:800;text-align:center;color:'+(b.contrib>=0?'var(--status-sobe)':'var(--status-cai)')+';">'+(b.contrib>=0?'+':'')+b.contrib.toFixed(2)+'</span></div>';
     }
-    document.getElementById('dash-cluster-breakdown').innerHTML = bHTML;
+    var breakdownContainer = document.getElementById('dash-cluster-breakdown');
+    if (breakdownContainer) breakdownContainer.innerHTML = bHTML;
 
     var kHTML = '';
     for (var c2 = 1; c2 <= 5; c2++) {
         var b2 = breakdown[c2] || { sobe:0, cai:0, perm:0, total:0, contrib:0 };
         var cc2 = CLUSTER_COLORS[c2];
+        if (!cc2) continue;
         kHTML += '<div class="glass-card animate-slide-up delay-'+c2+'" style="border-left:3px solid '+cc2.color+';">';
         kHTML += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
         kHTML += '<span class="cluster-badge c'+c2+'">'+cc2.name+'</span>';
@@ -214,12 +224,16 @@ function renderDashboard(dados) {
         kHTML += '<div style="font-family:var(--font-heading);font-size:1.5rem;font-weight:800;color:'+(b2.contrib>=0?'var(--status-sobe)':'var(--status-cai)')+';margin-bottom:4px;">'+(b2.contrib>=0?'+':'')+b2.contrib.toFixed(2)+'</div>';
         kHTML += '<div style="display:flex;gap:12px;font-size:0.7rem;color:var(--text-muted);"><span>'+b2.total+' EJs</span><span style="color:var(--status-sobe);">+'+b2.sobe+'</span><span style="color:var(--status-cai);">-'+b2.cai+'</span></div></div>';
     }
-    document.getElementById('dash-kpi-cards').innerHTML = kHTML;
+    var kpiCardsEl = document.getElementById('dash-kpi-cards');
+    if (kpiCardsEl) kpiCardsEl.innerHTML = kHTML;
     renderDashboardTable();
 }
 function renderDashboardTable() {
-    var filterCluster = document.getElementById('dash-filter-cluster').value;
-    var filterSit = document.getElementById('dash-filter-situacao').value;
+    var filterClusterEl = document.getElementById('dash-filter-cluster');
+    var filterSitEl = document.getElementById('dash-filter-situacao');
+    var filterCluster = filterClusterEl ? filterClusterEl.value : 'all';
+    var filterSit = filterSitEl ? filterSitEl.value : 'all';
+    
     var filtered = window.allEJs.slice();
     if (filterCluster !== 'all') filtered = filtered.filter(function(e) { return e.cluster === parseInt(filterCluster); });
     if (filterSit !== 'all') filtered = filtered.filter(function(e) { return e.situacao === filterSit; });
@@ -231,14 +245,15 @@ function renderDashboardTable() {
     var html = '';
     filtered.forEach(function(ej) {
         var cc = CLUSTER_COLORS[ej.cluster];
+        if (!cc) cc = { name: 'C' + ej.cluster, color: '#ccc' };
         var sitClass = ej.situacao === 'SOBE' ? 'badge-sobe' : ej.situacao === 'CAI' ? 'badge-cai' : 'badge-permanece';
         var sitIcon = ej.situacao === 'SOBE' ? '+' : ej.situacao === 'CAI' ? '-' : '=';
         var proxColor = ej.proximidade >= 70 ? 'var(--status-sobe)' : ej.proximidade >= 40 ? 'var(--brand-blue)' : 'var(--status-cai)';
         html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\'' + ej.id + '\')">';
         html += '<td style="font-weight:600;">' + ej.nome + '</td>';
         html += '<td style="text-align:center;"><span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span></td>';
-        html += '<td style="text-align:right;font-weight:600;">' + moneyFmt(ej.faturamento.alcancado) + '</td>';
-        html += '<td style="text-align:center;font-weight:600;">' + ej.csat.alcancado.toFixed(1) + '</td>';
+        html += '<td style="text-align:right;font-weight:600;">' + moneyFmt(ej.faturamento ? ej.faturamento.alcancado : 0) + '</td>';
+        html += '<td style="text-align:center;font-weight:600;">' + (ej.csat && ej.csat.alcancado ? ej.csat.alcancado.toFixed(1) : '0.0') + '</td>';
         html += '<td style="text-align:center;"><div style="display:flex;align-items:center;gap:6px;justify-content:center;">';
         html += '<div class="progress-bar-bg" style="width:60px;"><div class="progress-bar-fill" style="width:' + Math.min(100, ej.proximidade) + '%;background:' + proxColor + ';"></div></div>';
         html += '<span style="font-size:0.72rem;font-weight:700;color:' + proxColor + ';">' + Math.round(ej.proximidade) + '%</span></div></td>';
@@ -248,7 +263,8 @@ function renderDashboardTable() {
         else { html += '<span style="font-size:0.72rem;color:var(--text-muted);">-</span>'; }
         html += '</td></tr>';
     });
-    document.getElementById('dash-table-body').innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Nenhuma EJ encontrada</td></tr>';
+    var tbodyEl = document.getElementById('dash-table-body');
+    if (tbodyEl) tbodyEl.innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Nenhuma EJ encontrada</td></tr>';
 }
 
 function renderSimulator(dados) {
