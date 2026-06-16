@@ -7,20 +7,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    /* Core Palette */
-    --bg-deep: #0a0e1a;
-    --bg-surface: #111827;
-    --bg-card: rgba(17, 24, 39, 0.85);
-    --bg-card-hover: rgba(30, 41, 59, 0.95);
-    --bg-elevated: rgba(30, 41, 59, 0.6);
+    /* Core Palette - Premium Dark Blue */
+    --bg-deep: #050b14;
+    --bg-surface: #0a1122;
+    --bg-card: rgba(10, 17, 34, 0.7);
+    --bg-card-hover: rgba(15, 25, 48, 0.85);
+    --bg-elevated: rgba(15, 25, 48, 0.6);
 
-    /* Brand */
+    /* Brand - ES Flag (Rosa e Azul) */
     --brand-blue: #6BB0D1;
     --brand-pink: #F26487;
     --brand-purple: #a78bfa;
     --brand-cyan: #22d3ee;
-    --brand-gradient: linear-gradient(135deg, #6BB0D1, #a78bfa, #F26487);
-    --brand-gradient-subtle: linear-gradient(135deg, rgba(107,176,209,0.15), rgba(167,139,250,0.1), rgba(242,100,135,0.08));
+    --brand-gradient: linear-gradient(135deg, #F26487, #6BB0D1);
+    --brand-gradient-subtle: linear-gradient(135deg, rgba(242,100,135,0.1), rgba(107,176,209,0.1));
 
     /* Cluster Colors */
     --cluster-1: #F26487;
@@ -29,35 +29,35 @@
     --cluster-4: #22d3ee;
     --cluster-5: #34d399;
 
-    --cluster-1-bg: rgba(242,100,135,0.12);
-    --cluster-2-bg: rgba(167,139,250,0.12);
-    --cluster-3-bg: rgba(107,176,209,0.12);
-    --cluster-4-bg: rgba(34,211,238,0.12);
-    --cluster-5-bg: rgba(52,211,153,0.12);
+    --cluster-1-bg: rgba(242,100,135,0.15);
+    --cluster-2-bg: rgba(167,139,250,0.15);
+    --cluster-3-bg: rgba(107,176,209,0.15);
+    --cluster-4-bg: rgba(34,211,238,0.15);
+    --cluster-5-bg: rgba(52,211,153,0.15);
 
     /* Status */
     --status-sobe: #34d399;
     --status-cai: #f87171;
     --status-permanece: #94a3b8;
-    --status-sobe-bg: rgba(52,211,153,0.12);
-    --status-cai-bg: rgba(248,113,113,0.12);
+    --status-sobe-bg: rgba(52,211,153,0.15);
+    --status-cai-bg: rgba(248,113,113,0.15);
 
     /* Aposta */
     --aposta-alto: #34d399;
-    --aposta-potencial: #3b82f6;
+    --aposta-potencial: #6BB0D1;
     --aposta-risco: #fbbf24;
-    --aposta-alerta: #f87171;
+    --aposta-alerta: #F26487;
 
     /* Text */
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
     --text-muted: #64748b;
-    --text-accent: #e2e8f0;
+    --text-accent: #f1f5f9;
 
     /* Border */
-    --border-subtle: rgba(148,163,184,0.1);
-    --border-medium: rgba(148,163,184,0.2);
-    --border-active: rgba(59,130,246,0.4);
+    --border-subtle: rgba(255,255,255,0.05);
+    --border-medium: rgba(255,255,255,0.1);
+    --border-active: rgba(107,176,209,0.4);
 
     /* Spacing */
     --space-xs: 4px;
@@ -78,8 +78,8 @@
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-    --shadow-glow-blue: 0 0 20px rgba(59,130,246,0.2);
-    --shadow-glow-pink: 0 0 20px rgba(244,114,182,0.2);
+    --shadow-glow-blue: 0 0 24px rgba(107,176,209,0.25);
+    --shadow-glow-pink: 0 0 24px rgba(242,100,135,0.25);
     --shadow-glow-green: 0 0 20px rgba(52,211,153,0.15);
 
     /* Font */
@@ -110,9 +110,8 @@ body::before {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: 
-        radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(244,114,182,0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(167,139,250,0.03) 0%, transparent 60%);
+        radial-gradient(ellipse at 20% -10%, rgba(242,100,135,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 110%, rgba(107,176,209,0.08) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
 }
@@ -984,10 +983,38 @@ body::before {
 }
 
 .empty-state-icon {
-    font-size: 3rem;
-    margin-bottom: var(--space-md);
-    opacity: 0.4;
+    font-size: 2rem;
+    margin-bottom: 8px;
+    opacity: 0.5;
 }
+
+/* TABLE STYLES FOR RAW DATA */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    text-align: left;
+}
+.data-table th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+}
+.data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+}
+.data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
 
 /* --- Divider --- */
 .divider {

@@ -1,365 +1,537 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora SDE | Rede Juniores ES</title>
-    <meta name="description" content="Calculadora Analítica de Cluster e Saldo de Evolução para a Rede do Movimento Empresa Júnior do Espírito Santo">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <meta name="description"
+        content="Calculadora Analítica de Cluster e Saldo de Evolução para a Rede do Movimento Empresa Júnior do Espírito Santo">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 14, 26, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; font-family: 'Outfit', sans-serif;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid rgba(107,176,209,0.3);
+            border-top-color: #F26487; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 16px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
 </head>
+
 <body>
-
-<div class="app-layout">
-
-    <!-- UPLOAD BAR -->
-    <div class="upload-bar" id="upload-bar">
-        <label class="upload-btn" title="Planilha ejs_2026.xlsx">
-            📂 EJs (Farol)
-            <input type="file" id="upload-farol" accept=".csv,.xlsx" style="display:none">
-        </label>
-        <label class="upload-btn" title="Planilha monitoring_acumulated.xlsx">
-            📂 Acumulado (Fat.)
-            <input type="file" id="upload-tracking" accept=".csv,.xlsx" style="display:none">
-        </label>
-        <label class="upload-btn" title="Planilha monitoring.xlsx">
-            📂 Mensal (CSAT)
-            <input type="file" id="upload-mensal" accept=".csv,.xlsx" style="display:none">
-        </label>
-        <button class="process-btn" onclick="processLocalFiles()">🚀 Processar Dados</button>
-        <span id="network-status" style="font-size:0.72rem;font-weight:600;color:var(--brand-pink);margin-left:auto;">Aguardando dados...</span>
+    <div class="loading-overlay" id="global-loading">
+        <div class="spinner"></div>
+        <h2>Sincronizando Banco de Dados...</h2>
+        <p style="color:var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Conectando à Base da JUNIORES (ES)</p>
     </div>
 
-    <!-- HEADER -->
-    <header class="app-header">
-        <div style="display:flex;align-items:center;gap:16px;">
-            <div style="width:40px;height:40px;border-radius:12px;background:var(--brand-gradient);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-glow-blue);">
-                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+    <!-- MAIN APP WRAPPER -->
+    <div class="app-layout">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div style="width:40px;height:40px;background:var(--brand-gradient);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-glow-pink);">
+                    <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 style="font-family:var(--font-heading);font-size:1.2rem;font-weight:800;color:var(--text-primary);letter-spacing:-0.02em;">
+                        Calculadora <span style="color:var(--brand-pink);">SDE</span> <span style="color:var(--brand-blue);">ES</span>
+                    </h1>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);font-weight:500;">
+                        Planejamento Estratégico & Predição | Ciclo 2026
+                    </div>
+                </div>
             </div>
-            <div>
-                <h1 style="font-family:var(--font-heading);font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;">Calculadora SDE</h1>
-                <p style="font-size:0.7rem;color:var(--text-muted);font-weight:500;">Rede Juniores ES • Ciclo 2026</p>
-            </div>
+            <div style="display:flex;gap:var(--space-xl);align-items:center;">
+                <div class="kpi-card" style="align-items:flex-end;">
+                    <span class="kpi-label">Rede ES</span>
+                    <span class="kpi-value neutral" id="header-total-ejs">-</span>
+                </div>
+                <div class="kpi-card" style="align-items:flex-end;">
+                    <span class="kpi-label">SDE Atual</span>
+                    <span class="kpi-value neutral" id="header-sde">-</span>
+                </div>
+                <div class="kpi-card" style="align-items:flex-end; display:none;">
+                    <span class="kpi-label">Status BD</span>
+                    <span id="network-status" style="font-size:0.7rem;font-weight:700;color:var(--text-muted);">Sincronizando...</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button onclick="window.syncOnlineData()" class="btn-primary" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-medium);font-size:0.7rem;padding:6px 10px;">
+                        🔄 Atualizar
+                    </button>
+                    <button onclick="openSettingsModal()" class="btn-primary" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-medium);font-size:0.7rem;padding:6px 10px;">
+                        ⚙️ Fontes
+                    </button>
+                </div>
+        </header>
+
+        <!-- BODY -->
+        <div class="app-body">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span
+                            style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);">EJs
+                            por Cluster</span>
+                        <span id="sidebar-count"
+                            style="font-size:0.65rem;color:var(--text-muted);background:var(--bg-elevated);padding:2px 8px;border-radius:var(--radius-full);font-weight:600;">0</span>
+                    </div>
+                    <input type="text" id="sidebar-search" placeholder="Buscar EJ..."
+                        style="width:100%;margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:0.78rem;outline:none;">
+                </div>
+                <div class="sidebar-content custom-scrollbar" id="sidebar-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p style="font-size:0.78rem;">Importe as planilhas para começar</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN -->
+            <main class="main-content">
+
+                <!-- NAV TABS -->
+                <nav class="nav-tabs" id="nav-tabs">
+                    <div class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM14 13a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z" />
+                        </svg>
+                        Dashboard SDE
+                    </div>
+                    <div class="nav-tab" data-view="simulador" onclick="switchView('simulador')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Simulador
+                        <span class="tab-badge" id="tab-badge-sim">0</span>
+                    </div>
+                    <div class="nav-tab" data-view="apostas" onclick="switchView('apostas')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Gestão de Apostas
+                        <span class="tab-badge" id="tab-badge-apostas">0</span>
+                    </div>
+                    <div class="nav-tab" data-view="acao" onclick="switchView('acao')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        Plano de Ação
+                    </div>
+                    <div class="nav-tab" data-view="data-ejs" onclick="switchView('data-ejs')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        Dados: EJs
+                    </div>
+                    <div class="nav-tab" data-view="data-accum" onclick="switchView('data-accum')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Dados: Acumulado
+                    </div>
+                    <div class="nav-tab" data-view="data-mon" onclick="switchView('data-mon')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        Dados: Monitoramento
+                    </div>
+                </nav>
+
+                <!-- VIEWS CONTAINER -->
+                <div class="view-container custom-scrollbar" id="view-container">
+
+                    <!-- ========== VIEW 1: DASHBOARD SDE ========== -->
+                    <div class="view-panel active" id="view-dashboard">
+
+                        <h2 class="section-title">Dashboard — Saldo de Evolução</h2>
+                        <p class="section-subtitle">Fórmula SDE 2026 aplicada com pesos ponderados por cluster.
+                            Visualize a saúde da rede em tempo real.</p>
+
+                        <!-- SDE Principal + Fórmula -->
+                        <div
+                            style="display:grid;grid-template-columns:320px 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
+
+                            <!-- SDE Gauge -->
+                            <div class="glass-card"
+                                style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;">
+                                <span class="kpi-label">SDE da Rede (Fórmula 2026)</span>
+                                <div id="dash-sde-value" class="sde-gauge-value" style="margin:8px 0;">0.00</div>
+                                <div id="dash-sde-status" class="badge badge-permanece">NEUTRO</div>
+                                <p style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;max-width:260px;">
+                                    SDE = Σ (Peso_Cᵢ × (Sobe_Cᵢ − Cai_Cᵢ))
+                                </p>
+                            </div>
+
+                            <!-- Breakdown por Cluster -->
+                            <div class="glass-card">
+                                <div
+                                    style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+                                    <span
+                                        style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Contribuição
+                                        por Cluster</span>
+                                    <span style="font-size:0.68rem;color:var(--text-muted);">Peso × (Sobe − Cai)</span>
+                                </div>
+                                <div id="dash-cluster-breakdown">
+                                    <!-- Cluster rows injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KPI Cards -->
+                        <div class="grid-5" style="margin-bottom:var(--space-lg);" id="dash-kpi-cards">
+                            <!-- Injected: 5 cards, um por cluster -->
+                        </div>
+
+                        <!-- Tabela Resumo -->
+                        <div class="glass-card" style="padding:0;overflow:hidden;">
+                            <div
+                                style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Todas as EJs
+                                    da Rede</span>
+                                <div style="display:flex;gap:8px;">
+                                    <select id="dash-filter-cluster" class="sim-select" style="font-size:0.72rem;"
+                                        onchange="renderDashboardTable()">
+                                        <option value="all">Todos Clusters</option>
+                                        <option value="1">Cluster 1</option>
+                                        <option value="2">Cluster 2</option>
+                                        <option value="3">Cluster 3</option>
+                                        <option value="4">Cluster 4</option>
+                                        <option value="5">Cluster 5</option>
+                                    </select>
+                                    <select id="dash-filter-situacao" class="sim-select" style="font-size:0.72rem;"
+                                        onchange="renderDashboardTable()">
+                                        <option value="all">Todas Situações</option>
+                                        <option value="SOBE">Sobe</option>
+                                        <option value="CAI">Cai</option>
+                                        <option value="PERMANECE">Permanece</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="max-height:400px;overflow-y:auto;" class="custom-scrollbar">
+                                <table class="data-table" id="dash-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa Júnior</th>
+                                            <th style="text-align:center;">Cluster</th>
+                                            <th style="text-align:right;">Faturamento</th>
+                                            <th style="text-align:center;">CSAT</th>
+                                            <th style="text-align:center;">Proximidade</th>
+                                            <th style="text-align:center;">Situação</th>
+                                            <th style="text-align:center;">Trava</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-table-body">
+                                        <!-- Rows injected -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== VIEW 2: SIMULADOR ANTI-GRAVIDADE ========== -->
+                    <div class="view-panel" id="view-simulador">
+
+                        <h2 class="section-title">Simulador Anti-Gravidade</h2>
+                        <p class="section-subtitle">Altere o estado de qualquer EJ e veja o impacto imediato no SDE. Use
+                            o Solver para descobrir quantas EJs precisam subir para atingir sua meta.</p>
+
+                        <!-- Solver Panel -->
+                        <div class="solver-panel" style="margin-bottom:var(--space-lg);">
+                            <div style="display:flex;align-items:center;gap:var(--space-lg);flex-wrap:wrap;">
+                                <div>
+                                    <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);">🎯 Solver:
+                                        "Quantas EJs precisam subir?"</span>
+                                    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Defina a meta
+                                        de SDE e o sistema calcula o caminho para alcançá-la.</p>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:12px;">
+                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Meta
+                                        SDE:</span>
+                                    <input type="number" id="solver-meta" class="solver-input" value="3.0" step="0.1"
+                                        min="0" oninput="runSolver()">
+                                </div>
+                                <div style="flex:1;display:flex;gap:var(--space-md);flex-wrap:wrap;"
+                                    id="solver-results">
+                                    <!-- Solver results injected -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SDE Comparison -->
+                        <div
+                            style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-lg);">
+                            <div class="glass-card" style="text-align:center;">
+                                <span class="kpi-label">SDE Original</span>
+                                <div id="sim-sde-original" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
+                            </div>
+                            <div class="glass-card" style="text-align:center;">
+                                <span class="kpi-label">SDE Simulado</span>
+                                <div id="sim-sde-simulado" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
+                            </div>
+                            <div class="glass-card" style="text-align:center;">
+                                <span class="kpi-label">Delta (Impacto)</span>
+                                <div id="sim-sde-delta" class="sim-delta" style="margin-top:8px;">+0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Sim Table -->
+                        <div class="glass-card" style="padding:0;overflow:hidden;">
+                            <div
+                                style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Simulação
+                                    Interativa — Alterar Situação</span>
+                                <button class="btn-ghost" onclick="resetSimulation()">↺ Resetar Simulação</button>
+                            </div>
+                            <div style="max-height:500px;overflow-y:auto;" class="custom-scrollbar">
+                                <table class="data-table" id="sim-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa Júnior</th>
+                                            <th style="text-align:center;">Cluster</th>
+                                            <th style="text-align:center;">Peso</th>
+                                            <th style="text-align:center;">Situação Original</th>
+                                            <th style="text-align:center;">Situação Simulada</th>
+                                            <th style="text-align:center;">Impacto no SDE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sim-table-body">
+                                        <!-- Rows injected -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== VIEW 3: GESTÃO DE APOSTAS ========== -->
+                    <div class="view-panel" id="view-apostas">
+
+                        <h2 class="section-title">Gestão de Apostas</h2>
+                        <p class="section-subtitle">Priorização estratégica de EJs para intervenção. Foco em ganhos
+                            rápidos (C1 e C2) e proteção contra quedas.</p>
+
+                        <!-- Projeção SDE -->
+                        <div
+                            style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
+                            <div class="glass-card card-glow-green">
+                                <span
+                                    style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">📊
+                                    Projeção: SDE Atual vs. Projetado</span>
+                                <div
+                                    style="display:flex;align-items:center;gap:var(--space-xl);justify-content:center;">
+                                    <div style="text-align:center;">
+                                        <div id="proj-sde-atual"
+                                            style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--text-primary);">
+                                            0.00</div>
+                                        <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">SDE
+                                            Atual</div>
+                                    </div>
+                                    <svg width="32" height="32" fill="none" stroke="var(--text-muted)" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                    <div style="text-align:center;">
+                                        <div id="proj-sde-projetado"
+                                            style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--status-sobe);">
+                                            0.00</div>
+                                        <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">
+                                            Projetado (com apostas)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass-card">
+                                <span
+                                    style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">🎯
+                                    Resumo de Apostas</span>
+                                <div class="grid-2" style="gap:var(--space-sm);">
+                                    <div
+                                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(52,211,153,0.08);border-radius:var(--radius-md);">
+                                        <div
+                                            style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alto);">
+                                        </div>
+                                        <span
+                                            style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alto
+                                            Retorno</span>
+                                        <span id="count-alto"
+                                            style="margin-left:auto;font-weight:800;color:var(--aposta-alto);">0</span>
+                                    </div>
+                                    <div
+                                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:var(--radius-md);">
+                                        <div
+                                            style="width:10px;height:10px;border-radius:50%;background:var(--aposta-potencial);">
+                                        </div>
+                                        <span
+                                            style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Potencial</span>
+                                        <span id="count-potencial"
+                                            style="margin-left:auto;font-weight:800;color:var(--aposta-potencial);">0</span>
+                                    </div>
+                                    <div
+                                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(251,191,36,0.08);border-radius:var(--radius-md);">
+                                        <div
+                                            style="width:10px;height:10px;border-radius:50%;background:var(--aposta-risco);">
+                                        </div>
+                                        <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Em
+                                            Risco</span>
+                                        <span id="count-risco"
+                                            style="margin-left:auto;font-weight:800;color:var(--aposta-risco);">0</span>
+                                    </div>
+                                    <div
+                                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(248,113,113,0.08);border-radius:var(--radius-md);">
+                                        <div
+                                            style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alerta);">
+                                        </div>
+                                        <span
+                                            style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alerta
+                                            Vermelho</span>
+                                        <span id="count-alerta"
+                                            style="margin-left:auto;font-weight:800;color:var(--aposta-alerta);">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtro por Categoria -->
+                        <div style="display:flex;gap:8px;margin-bottom:var(--space-lg);flex-wrap:wrap;">
+                            <button class="btn-ghost" style="font-size:0.72rem;"
+                                onclick="filterApostas('all')">Todas</button>
+                            <button class="btn-ghost"
+                                style="font-size:0.72rem;border-color:rgba(52,211,153,0.3);color:var(--aposta-alto);"
+                                onclick="filterApostas('alto')">🎯 Alto Retorno</button>
+                            <button class="btn-ghost"
+                                style="font-size:0.72rem;border-color:rgba(59,130,246,0.3);color:var(--aposta-potencial);"
+                                onclick="filterApostas('potencial')">⚡ Potencial</button>
+                            <button class="btn-ghost"
+                                style="font-size:0.72rem;border-color:rgba(251,191,36,0.3);color:var(--aposta-risco);"
+                                onclick="filterApostas('risco')">⚠️ Em Risco</button>
+                            <button class="btn-ghost"
+                                style="font-size:0.72rem;border-color:rgba(248,113,113,0.3);color:var(--aposta-alerta);"
+                                onclick="filterApostas('alerta')">🚨 Alerta</button>
+                        </div>
+
+                        <!-- Cards de Apostas -->
+                        <div id="apostas-container" class="grid-2">
+                            <!-- Aposta cards injected -->
+                        </div>
+                    </div>
+
+                    <!-- ========== VIEW 4: PLANO DE AÇÃO ========== -->
+                    <div class="view-panel" id="view-acao">
+
+                        <h2 class="section-title">Plano de Ação — Agir na Rede</h2>
+                        <p class="section-subtitle">Micro-relatórios com travas identificadas, ações recomendadas e
+                            ritmo de acompanhamento para cada EJ priorizada.</p>
+
+                        <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-lg);align-items:center;">
+                            <button class="btn-primary" onclick="generateAllActionPlans()">⚡ Gerar Planos para Apostas
+                                de Alto Retorno</button>
+                            <button class="btn-ghost" onclick="generateAllActionPlans('all')">📋 Gerar para Todas as
+                                Apostas</button>
+                            <button class="btn-ghost" onclick="printActionPlans()" style="margin-left:auto;">🖨️
+                                Imprimir</button>
+                        </div>
+
+                        <div id="action-plans-container">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <p style="font-size:0.82rem;font-weight:600;">Clique em "Gerar Planos" para criar os
+                                    micro-relatórios</p>
+                                <p style="font-size:0.72rem;margin-top:4px;">Os planos serão baseados nas EJs
+                                    priorizadas na Gestão de Apostas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== VIEWS DOS BANCOS DE DADOS ========== -->
+                    <div class="view-panel" id="view-data-ejs">
+                        <h2 class="section-title">Dados Brutos: EJs Farol</h2>
+                        <p class="section-subtitle">Apenas EJs ativas da JUNIORES ES.</p>
+                        <div class="glass-card" style="padding:0;overflow:hidden;">
+                            <div style="max-height:500px;overflow:auto;" class="custom-scrollbar" id="table-container-ejs"></div>
+                        </div>
+                    </div>
+
+                    <div class="view-panel" id="view-data-accum">
+                        <h2 class="section-title">Dados Brutos: Faturamento Acumulado</h2>
+                        <p class="section-subtitle">Dados de Faturamento referentes à JUNIORES ES.</p>
+                        <div class="glass-card" style="padding:0;overflow:hidden;">
+                            <div style="max-height:500px;overflow:auto;" class="custom-scrollbar" id="table-container-accum"></div>
+                        </div>
+                    </div>
+
+                    <div class="view-panel" id="view-data-mon">
+                        <h2 class="section-title">Dados Brutos: Monitoramento e CSAT</h2>
+                        <p class="section-subtitle">Dados de CSAT, ECM, Engajamento da JUNIORES ES.</p>
+                        <div class="glass-card" style="padding:0;overflow:hidden;">
+                            <div style="max-height:500px;overflow:auto;" class="custom-scrollbar" id="table-container-mon"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
         </div>
 
-        <!-- Global KPIs -->
-        <div style="display:flex;align-items:center;gap:32px;">
-            <div class="kpi-card">
-                <span class="kpi-label">Saldo de Evolução</span>
-                <span class="kpi-value neutral" id="header-sde">0.00</span>
-            </div>
-            <div style="width:1px;height:36px;background:var(--border-subtle);"></div>
-            <div class="kpi-card">
-                <span class="kpi-label">Total EJs</span>
-                <span class="kpi-value neutral" id="header-total-ejs" style="font-size:1.4rem;">0</span>
-            </div>
-            <div class="kpi-card">
-                <span class="kpi-label">Faturamento Rede</span>
-                <span class="kpi-value neutral" id="header-faturamento" style="font-size:1.4rem;">R$ 0</span>
-            </div>
-            <div style="width:1px;height:36px;background:var(--border-subtle);"></div>
-            <div style="display:flex;gap:16px;">
-                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs subindo de Cluster">
-                    <span class="kpi-label" style="color:var(--status-sobe);">▲ Sobe</span>
-                    <span class="kpi-value positive" id="header-sobe" style="font-size:1.4rem;">0</span>
-                </div>
-                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs caindo de Cluster">
-                    <span class="kpi-label" style="color:var(--status-cai);">▼ Cai</span>
-                    <span class="kpi-value negative" id="header-cai" style="font-size:1.4rem;">0</span>
-                </div>
-                <div class="kpi-card" style="text-align:center;cursor:pointer;" data-tooltip="EJs que permanecem">
-                    <span class="kpi-label" style="color:var(--status-permanece);">= Perm</span>
-                    <span class="kpi-value neutral" id="header-perm" style="font-size:1.4rem;color:var(--text-muted);">0</span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- BODY -->
-    <div class="app-body">
-
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);">EJs por Cluster</span>
-                    <span id="sidebar-count" style="font-size:0.65rem;color:var(--text-muted);background:var(--bg-elevated);padding:2px 8px;border-radius:var(--radius-full);font-weight:600;">0</span>
-                </div>
-                <input type="text" id="sidebar-search" placeholder="Buscar EJ..." style="width:100%;margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:0.78rem;outline:none;">
-            </div>
-            <div class="sidebar-content custom-scrollbar" id="sidebar-list">
-                <div class="empty-state">
-                    <div class="empty-state-icon">📊</div>
-                    <p style="font-size:0.78rem;">Importe as planilhas para começar</p>
-                </div>
-            </div>
-        </aside>
-
-        <!-- MAIN -->
-        <main class="main-content">
-
-            <!-- NAV TABS -->
-            <nav class="nav-tabs" id="nav-tabs">
-                <div class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM14 13a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"/></svg>
-                    Dashboard SDE
-                </div>
-                <div class="nav-tab" data-view="simulador" onclick="switchView('simulador')">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                    Simulador
-                    <span class="tab-badge" id="tab-badge-sim">0</span>
-                </div>
-                <div class="nav-tab" data-view="apostas" onclick="switchView('apostas')">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    Gestão de Apostas
-                    <span class="tab-badge" id="tab-badge-apostas">0</span>
-                </div>
-                <div class="nav-tab" data-view="acao" onclick="switchView('acao')">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                    Plano de Ação
-                </div>
-            </nav>
-
-            <!-- VIEWS CONTAINER -->
-            <div class="view-container custom-scrollbar" id="view-container">
-
-                <!-- ========== VIEW 1: DASHBOARD SDE ========== -->
-                <div class="view-panel active" id="view-dashboard">
-
-                    <h2 class="section-title">Dashboard — Saldo de Evolução</h2>
-                    <p class="section-subtitle">Fórmula SDE 2026 aplicada com pesos ponderados por cluster. Visualize a saúde da rede em tempo real.</p>
-
-                    <!-- SDE Principal + Fórmula -->
-                    <div style="display:grid;grid-template-columns:320px 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
-
-                        <!-- SDE Gauge -->
-                        <div class="glass-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;">
-                            <span class="kpi-label">SDE da Rede (Fórmula 2026)</span>
-                            <div id="dash-sde-value" class="sde-gauge-value" style="margin:8px 0;">0.00</div>
-                            <div id="dash-sde-status" class="badge badge-permanece">NEUTRO</div>
-                            <p style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;max-width:260px;">
-                                SDE = Σ (Peso_Cᵢ × (Sobe_Cᵢ − Cai_Cᵢ))
-                            </p>
-                        </div>
-
-                        <!-- Breakdown por Cluster -->
-                        <div class="glass-card">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
-                                <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Contribuição por Cluster</span>
-                                <span style="font-size:0.68rem;color:var(--text-muted);">Peso × (Sobe − Cai)</span>
-                            </div>
-                            <div id="dash-cluster-breakdown">
-                                <!-- Cluster rows injected here -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- KPI Cards -->
-                    <div class="grid-5" style="margin-bottom:var(--space-lg);" id="dash-kpi-cards">
-                        <!-- Injected: 5 cards, um por cluster -->
-                    </div>
-
-                    <!-- Tabela Resumo -->
-                    <div class="glass-card" style="padding:0;overflow:hidden;">
-                        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Todas as EJs da Rede</span>
-                            <div style="display:flex;gap:8px;">
-                                <select id="dash-filter-cluster" class="sim-select" style="font-size:0.72rem;" onchange="renderDashboardTable()">
-                                    <option value="all">Todos Clusters</option>
-                                    <option value="1">Cluster 1</option>
-                                    <option value="2">Cluster 2</option>
-                                    <option value="3">Cluster 3</option>
-                                    <option value="4">Cluster 4</option>
-                                    <option value="5">Cluster 5</option>
-                                </select>
-                                <select id="dash-filter-situacao" class="sim-select" style="font-size:0.72rem;" onchange="renderDashboardTable()">
-                                    <option value="all">Todas Situações</option>
-                                    <option value="SOBE">Sobe</option>
-                                    <option value="CAI">Cai</option>
-                                    <option value="PERMANECE">Permanece</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="max-height:400px;overflow-y:auto;" class="custom-scrollbar">
-                            <table class="data-table" id="dash-table">
-                                <thead>
-                                    <tr>
-                                        <th>Empresa Júnior</th>
-                                        <th style="text-align:center;">Cluster</th>
-                                        <th style="text-align:right;">Faturamento</th>
-                                        <th style="text-align:center;">CSAT</th>
-                                        <th style="text-align:center;">Proximidade</th>
-                                        <th style="text-align:center;">Situação</th>
-                                        <th style="text-align:center;">Trava</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dash-table-body">
-                                    <!-- Rows injected -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========== VIEW 2: SIMULADOR ANTI-GRAVIDADE ========== -->
-                <div class="view-panel" id="view-simulador">
-
-                    <h2 class="section-title">Simulador Anti-Gravidade</h2>
-                    <p class="section-subtitle">Altere o estado de qualquer EJ e veja o impacto imediato no SDE. Use o Solver para descobrir quantas EJs precisam subir para atingir sua meta.</p>
-
-                    <!-- Solver Panel -->
-                    <div class="solver-panel" style="margin-bottom:var(--space-lg);">
-                        <div style="display:flex;align-items:center;gap:var(--space-lg);flex-wrap:wrap;">
-                            <div>
-                                <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);">🎯 Solver: "Quantas EJs precisam subir?"</span>
-                                <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Defina a meta de SDE e o sistema calcula o caminho para alcançá-la.</p>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:12px;">
-                                <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Meta SDE:</span>
-                                <input type="number" id="solver-meta" class="solver-input" value="3.0" step="0.1" min="0" oninput="runSolver()">
-                            </div>
-                            <div style="flex:1;display:flex;gap:var(--space-md);flex-wrap:wrap;" id="solver-results">
-                                <!-- Solver results injected -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SDE Comparison -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-lg);">
-                        <div class="glass-card" style="text-align:center;">
-                            <span class="kpi-label">SDE Original</span>
-                            <div id="sim-sde-original" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
-                        </div>
-                        <div class="glass-card" style="text-align:center;">
-                            <span class="kpi-label">SDE Simulado</span>
-                            <div id="sim-sde-simulado" class="kpi-value neutral" style="margin-top:8px;">0.00</div>
-                        </div>
-                        <div class="glass-card" style="text-align:center;">
-                            <span class="kpi-label">Delta (Impacto)</span>
-                            <div id="sim-sde-delta" class="sim-delta" style="margin-top:8px;">+0.00</div>
-                        </div>
-                    </div>
-
-                    <!-- Sim Table -->
-                    <div class="glass-card" style="padding:0;overflow:hidden;">
-                        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Simulação Interativa — Alterar Situação</span>
-                            <button class="btn-ghost" onclick="resetSimulation()">↺ Resetar Simulação</button>
-                        </div>
-                        <div style="max-height:500px;overflow-y:auto;" class="custom-scrollbar">
-                            <table class="data-table" id="sim-table">
-                                <thead>
-                                    <tr>
-                                        <th>Empresa Júnior</th>
-                                        <th style="text-align:center;">Cluster</th>
-                                        <th style="text-align:center;">Peso</th>
-                                        <th style="text-align:center;">Situação Original</th>
-                                        <th style="text-align:center;">Situação Simulada</th>
-                                        <th style="text-align:center;">Impacto no SDE</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sim-table-body">
-                                    <!-- Rows injected -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========== VIEW 3: GESTÃO DE APOSTAS ========== -->
-                <div class="view-panel" id="view-apostas">
-
-                    <h2 class="section-title">Gestão de Apostas</h2>
-                    <p class="section-subtitle">Priorização estratégica de EJs para intervenção. Foco em ganhos rápidos (C1 e C2) e proteção contra quedas.</p>
-
-                    <!-- Projeção SDE -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-lg);">
-                        <div class="glass-card card-glow-green">
-                            <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">📊 Projeção: SDE Atual vs. Projetado</span>
-                            <div style="display:flex;align-items:center;gap:var(--space-xl);justify-content:center;">
-                                <div style="text-align:center;">
-                                    <div id="proj-sde-atual" style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--text-primary);">0.00</div>
-                                    <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">SDE Atual</div>
-                                </div>
-                                <svg width="32" height="32" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                                <div style="text-align:center;">
-                                    <div id="proj-sde-projetado" style="font-family:var(--font-heading);font-size:2.4rem;font-weight:800;color:var(--status-sobe);">0.00</div>
-                                    <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">Projetado (com apostas)</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="glass-card">
-                            <span style="font-size:0.78rem;font-weight:700;color:var(--text-accent);display:block;margin-bottom:var(--space-md);">🎯 Resumo de Apostas</span>
-                            <div class="grid-2" style="gap:var(--space-sm);">
-                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(52,211,153,0.08);border-radius:var(--radius-md);">
-                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alto);"></div>
-                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alto Retorno</span>
-                                    <span id="count-alto" style="margin-left:auto;font-weight:800;color:var(--aposta-alto);">0</span>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:var(--radius-md);">
-                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-potencial);"></div>
-                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Potencial</span>
-                                    <span id="count-potencial" style="margin-left:auto;font-weight:800;color:var(--aposta-potencial);">0</span>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(251,191,36,0.08);border-radius:var(--radius-md);">
-                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-risco);"></div>
-                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Em Risco</span>
-                                    <span id="count-risco" style="margin-left:auto;font-weight:800;color:var(--aposta-risco);">0</span>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(248,113,113,0.08);border-radius:var(--radius-md);">
-                                    <div style="width:10px;height:10px;border-radius:50%;background:var(--aposta-alerta);"></div>
-                                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Alerta Vermelho</span>
-                                    <span id="count-alerta" style="margin-left:auto;font-weight:800;color:var(--aposta-alerta);">0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filtro por Categoria -->
-                    <div style="display:flex;gap:8px;margin-bottom:var(--space-lg);flex-wrap:wrap;">
-                        <button class="btn-ghost" style="font-size:0.72rem;" onclick="filterApostas('all')">Todas</button>
-                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(52,211,153,0.3);color:var(--aposta-alto);" onclick="filterApostas('alto')">🎯 Alto Retorno</button>
-                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(59,130,246,0.3);color:var(--aposta-potencial);" onclick="filterApostas('potencial')">⚡ Potencial</button>
-                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(251,191,36,0.3);color:var(--aposta-risco);" onclick="filterApostas('risco')">⚠️ Em Risco</button>
-                        <button class="btn-ghost" style="font-size:0.72rem;border-color:rgba(248,113,113,0.3);color:var(--aposta-alerta);" onclick="filterApostas('alerta')">🚨 Alerta</button>
-                    </div>
-
-                    <!-- Cards de Apostas -->
-                    <div id="apostas-container" class="grid-2">
-                        <!-- Aposta cards injected -->
-                    </div>
-                </div>
-
-                <!-- ========== VIEW 4: PLANO DE AÇÃO ========== -->
-                <div class="view-panel" id="view-acao">
-
-                    <h2 class="section-title">Plano de Ação — Agir na Rede</h2>
-                    <p class="section-subtitle">Micro-relatórios com travas identificadas, ações recomendadas e ritmo de acompanhamento para cada EJ priorizada.</p>
-
-                    <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-lg);align-items:center;">
-                        <button class="btn-primary" onclick="generateAllActionPlans()">⚡ Gerar Planos para Apostas de Alto Retorno</button>
-                        <button class="btn-ghost" onclick="generateAllActionPlans('all')">📋 Gerar para Todas as Apostas</button>
-                        <button class="btn-ghost" onclick="printActionPlans()" style="margin-left:auto;">🖨️ Imprimir</button>
-                    </div>
-
-                    <div id="action-plans-container">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📋</div>
-                            <p style="font-size:0.82rem;font-weight:600;">Clique em "Gerar Planos" para criar os micro-relatórios</p>
-                            <p style="font-size:0.72rem;margin-top:4px;">Os planos serão baseados nas EJs priorizadas na Gestão de Apostas</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </main>
     </div>
 
-</div>
+    <!-- MODAL DE CONFIGURAÇÕES -->
+    <div class="modal-overlay" id="settings-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div class="glass-card" style="width:90%;max-width:600px;position:relative;">
+            <button onclick="document.getElementById('settings-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--text-primary);cursor:pointer;font-size:1.5rem;">&times;</button>
+            <h2 class="section-title">Fontes de Dados (Google Sheets)</h2>
+            <p class="section-subtitle">Cole aqui os links de exportação CSV das planilhas para atualizar o banco de dados da plataforma.</p>
+            
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+                <div>
+                    <label style="font-size:0.8rem;color:var(--brand-pink);font-weight:700;">Link: EJs (Farol)</label>
+                    <input type="text" id="url-ejs" class="search-input" style="width:100%;margin-top:4px;" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:var(--brand-blue);font-weight:700;">Link: Faturamento Acumulado</label>
+                    <input type="text" id="url-accum" class="search-input" style="width:100%;margin-top:4px;" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:var(--status-sobe);font-weight:700;">Link: Monitoramento</label>
+                    <input type="text" id="url-mon" class="search-input" style="width:100%;margin-top:4px;" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                </div>
+            </div>
+            
+            <div style="margin-top:24px;display:flex;justify-content:flex-end;gap:12px;">
+                <button class="btn-primary" onclick="resetSettings()" style="background:transparent;border:1px solid var(--border-medium);color:var(--text-muted);">Restaurar Padrão</button>
+                <button class="btn-primary" onclick="saveSettings()" style="background:var(--brand-gradient);border:none;">Salvar e Sincronizar</button>
+            </div>
+        </div>
+    </div>
 
-<script src="native_engine.js"></script>
-<script src="app.js"></script>
+    <!-- MODAL DE PREDICÃO -->
+    <div class="modal-overlay" id="predicao-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div class="glass-card" style="width:90%;max-width:900px;max-height:90vh;overflow-y:auto;position:relative;">
+            <button onclick="document.getElementById('predicao-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--text-primary);cursor:pointer;font-size:1.5rem;">&times;</button>
+            <h2 class="section-title" id="predicao-modal-title">Diagnóstico e Cenários de Evolução</h2>
+            <p class="section-subtitle" id="predicao-modal-subtitle"></p>
+            <div id="predicao-modal-content"></div>
+        </div>
+    </div>
+
+    <script src="native_engine.js"></script>
+    <script src="app.js"></script>
 </body>
+
 </html>

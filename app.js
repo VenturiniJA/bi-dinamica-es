@@ -55,6 +55,31 @@ function initPlatform(dados) {
     var totalAlto = dados.filter(function(e) { return e.categoriaAposta === 'alto'; }).length;
     document.getElementById('tab-badge-sim').textContent = dados.length;
     document.getElementById('tab-badge-apostas').textContent = totalAlto;
+    
+    // Render raw datasets if available
+    renderRawDataTables();
+}
+
+function renderRawDataTables() {
+    function createTable(dataArray, containerId) {
+        if (!dataArray || dataArray.length === 0) return;
+        var headers = Object.keys(dataArray[0]);
+        var html = '<table class="data-table"><thead><tr>';
+        headers.forEach(h => html += '<th>' + h + '</th>');
+        html += '</tr></thead><tbody>';
+        dataArray.forEach(row => {
+            html += '<tr>';
+            headers.forEach(h => html += '<td>' + (row[h] || '') + '</td>');
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        var container = document.getElementById(containerId);
+        if (container) container.innerHTML = html;
+    }
+
+    if (window.rawEJsData) createTable(window.rawEJsData, 'table-container-ejs');
+    if (window.rawAccumData) createTable(window.rawAccumData, 'table-container-accum');
+    if (window.rawMonData) createTable(window.rawMonData, 'table-container-mon');
 }
 
 function updateHeaderKPIs(dados) {
@@ -108,6 +133,34 @@ function highlightEJ(id) {
         row.style.background = 'rgba(59,130,246,0.15)';
         setTimeout(function() { row.style.background = ''; }, 2000);
     }
+    openPredictionModal(id);
+}
+
+function openPredictionModal(id) {
+    var ej = window.allEJs.find(e => e.id === id);
+    if (!ej) return;
+
+    document.getElementById('predicao-modal-title').textContent = 'Diagnóstico e Cenários: ' + ej.nome;
+    document.getElementById('predicao-modal-subtitle').textContent = 'Cluster Atual: ' + ej.cluster + ' | Situação: ' + ej.situacao;
+    
+    var estrategias = gerarEstrategiasEvolucao(ej);
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-top:16px;">';
+    
+    estrategias.forEach((est, idx) => {
+        var effColor = est.esforco === 'Baixo' ? 'var(--status-sobe)' : est.esforco === 'Médio' ? 'var(--brand-blue)' : 'var(--status-cai)';
+        html += '<div class="glass-card" style="position:relative;overflow:hidden;border-top:3px solid ' + effColor + ';">';
+        html += '<div style="position:absolute;top:-10px;right:-10px;font-size:3rem;opacity:0.05;font-weight:900;">' + (idx+1) + '</div>';
+        html += '<h3 style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">' + est.titulo + '</h3>';
+        html += '<p style="font-size:0.75rem;color:var(--text-secondary);line-height:1.4;margin-bottom:12px;">' + est.desc + '</p>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:0.65rem;font-weight:600;">';
+        html += '<span style="color:' + effColor + ';">Esforço: ' + est.esforco + '</span>';
+        html += '<span style="color:var(--text-muted);">Viabilidade: ' + est.viabilidade + '</span>';
+        html += '</div></div>';
+    });
+    
+    html += '</div>';
+    document.getElementById('predicao-modal-content').innerHTML = html;
+    document.getElementById('predicao-modal').style.display = 'flex';
 }
 
 function renderDashboard(dados) {
@@ -169,7 +222,7 @@ function renderDashboardTable() {
         var sitClass = ej.situacao === 'SOBE' ? 'badge-sobe' : ej.situacao === 'CAI' ? 'badge-cai' : 'badge-permanece';
         var sitIcon = ej.situacao === 'SOBE' ? '+' : ej.situacao === 'CAI' ? '-' : '=';
         var proxColor = ej.proximidade >= 70 ? 'var(--status-sobe)' : ej.proximidade >= 40 ? 'var(--brand-blue)' : 'var(--status-cai)';
-        html += '<tr data-ej-id="' + ej.id + '">';
+        html += '<tr data-ej-id="' + ej.id + '" style="cursor:pointer;" onclick="openPredictionModal(\'' + ej.id + '\')">';
         html += '<td style="font-weight:600;">' + ej.nome + '</td>';
         html += '<td style="text-align:center;"><span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span></td>';
         html += '<td style="text-align:right;font-weight:600;">' + moneyFmt(ej.faturamento.alcancado) + '</td>';
@@ -328,7 +381,7 @@ function renderApostasCards(dados) {
         if (det.csatPercSubir !== undefined) indHTML += buildMiniProgress('CSAT', det.csatPercSubir, ej.csat.alcancado.toFixed(1));
         if (det.ecmPercSubir !== undefined) indHTML += buildMiniProgress('ECM', det.ecmPercSubir, ej.ecm.alcancado + '%');
         if (det.fcolabPercSubir !== undefined) indHTML += buildMiniProgress('Fat. Colab', det.fcolabPercSubir, ej.fcolab + '%');
-        html += '<div class="aposta-card ' + ej.categoriaAposta + '"><div class="accent-strip"></div><div style="padding-left:12px;">';
+        html += '<div class="aposta-card ' + ej.categoriaAposta + '" onclick="openPredictionModal(\'' + ej.id + '\')" style="cursor:pointer;"><div class="accent-strip"></div><div style="padding-left:12px;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;"><div>';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
         html += '<span style="font-size:0.92rem;font-weight:700;color:var(--text-primary);">' + ej.nome + '</span>';
@@ -437,7 +490,7 @@ function generateActionPlan(ej) {
 
 function printActionPlans() { window.print(); }
 
-document.addEventListener('DOMContentLoaded', function() { loadDemoData(); });
+document.addEventListener('DOMContentLoaded', function() { window.syncOnlineData(); });
 
 function loadDemoData() {
     var demoEJs = [

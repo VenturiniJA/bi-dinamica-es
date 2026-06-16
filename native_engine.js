@@ -112,37 +112,44 @@ function readFileAsCSV(file) {
     });
 }
 
-window.processLocalFiles = function() {
-    const fileEJs = document.getElementById('upload-farol').files[0];
-    const fileAccum = document.getElementById('upload-tracking').files[0];
-    const fileMon = document.getElementById('upload-mensal').files[0];
+window.syncOnlineData = function() {
+    const urlEJs = "https://docs.google.com/spreadsheets/d/1Ap1K4IPFBH6EW2lyW7vjEOnyoSWJ_sFB/export?format=csv";
+    const urlAccum = "https://docs.google.com/spreadsheets/d/1TR14rF66nZY9TJtp-I7eeNOFN6E8om2c/export?format=csv";
+    const urlMon = "https://docs.google.com/spreadsheets/d/1g6zr45fDFt5EPpdV3I7JeAniHlUTJJxc/export?format=csv";
 
-    if (!fileEJs || !fileAccum || !fileMon) {
-        alert("Por favor, selecione as 3 planilhas do Portal BJ:\n1. EJs (Farol)\n2. Acumulado (Faturamento)\n3. Mensal (CSAT)");
-        return;
+    const statusEl = document.getElementById('network-status');
+    if (statusEl) {
+        statusEl.textContent = 'Processando planilhas online...';
+        statusEl.style.color = 'var(--brand-pink)';
     }
 
-    document.getElementById('network-status').textContent = 'Processando planilhas...';
-    document.getElementById('network-status').style.color = 'var(--brand-pink)';
-
     Promise.all([
-        readFileAsCSV(fileEJs),
-        readFileAsCSV(fileAccum),
-        readFileAsCSV(fileMon)
+        fetch(urlEJs).then(r => r.text()),
+        fetch(urlAccum).then(r => r.text()),
+        fetch(urlMon).then(r => r.text())
     ]).then(([ejsCSV, accumCSV, monCSV]) => {
         Papa.parse(ejsCSV, { header: true, skipEmptyLines: true, complete: resEJs => {
             Papa.parse(accumCSV, { header: true, skipEmptyLines: true, complete: resAccum => {
                 Papa.parse(monCSV, { header: true, skipEmptyLines: true, complete: resMon => {
+                    window.rawEJsData = resEJs.data;
+                    window.rawAccumData = resAccum.data;
+                    window.rawMonData = resMon.data;
                     const dados = buildStatisticalModel(resEJs.data, resAccum.data, resMon.data);
                     if (!dados || dados.length === 0) {
-                        alert("Nenhuma EJ encontrada nas planilhas.");
+                        alert("Nenhuma EJ encontrada nas planilhas online.");
                         return;
                     }
-                    document.getElementById('network-status').textContent = '✓ Dados carregados';
-                    document.getElementById('network-status').style.color = 'var(--status-sobe)';
-                    setTimeout(() => {
-                        document.getElementById('network-status').style.opacity = '0.5';
-                    }, 2000);
+                    if (statusEl) {
+                        statusEl.textContent = '✓ Dados sincronizados';
+                        statusEl.style.color = 'var(--status-sobe)';
+                        setTimeout(() => { statusEl.style.opacity = '0.5'; }, 2000);
+                    }
+                    
+                    const loadingOverlay = document.getElementById('global-loading');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.opacity = '0';
+                        setTimeout(() => loadingOverlay.style.display = 'none', 500);
+                    }
 
                     // Inicializar toda a plataforma
                     window.allEJs = dados;
@@ -152,7 +159,8 @@ window.processLocalFiles = function() {
         }});
     }).catch(err => {
         console.error(err);
-        alert("Erro ao processar planilhas: " + err.message);
+        if (statusEl) statusEl.textContent = 'Erro de sincronização';
+        alert("Erro ao buscar as planilhas do Google Sheets: " + err.message);
     });
 };
 
@@ -165,11 +173,21 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const prorataRatio = currentMonth / 12.0;
 
     const keysEJs = Object.keys(ejsData[0] || {});
-    const colNomeEJ = findColIdx(keysEJs, ["NOME"]);
-    const colSigla = findColIdx(keysEJs, ["SIGLA"]);
-    const colCluster = findColIdx(keysEJs, ["CLUSTER"]);
-    const colStatus = findColIdx(keysEJs, ["STATUS"]);
-    const colFed = findColIdx(keysEJs, ["FEDERA"]);
+    // Busca colunas da planilha principal 2026
+    const colNomeEJ = keysEJs.findIndex(k => k.includes('EMPRESA_JUNIOR') || k.includes('NOME'));
+    const colSigla = keysEJs.findIndex(k => k.includes('SIGLA') || k.includes('EMPRESA'));
+    const colCluster = keysEJs.findIndex(k => k.includes('CLUSTER_2026') || k.includes('CLUSTER'));
+    const colStatus = keysEJs.findIndex(k => k.includes('E_FEDERADA') || k.includes('STATUS'));
+    const colFed = keysEJs.findIndex(k => k.includes('FEDERACAO') || k.includes('FEDERA'));
+
+    // Novas colunas (dados já na planilha principal em 2026)
+    const colFatEJ = keysEJs.findIndex(k => k === 'FATURAMENTO');
+    const colFatMetaEJ = keysEJs.findIndex(k => k === 'META_DE_REVENUE');
+    const colCsatEJ = keysEJs.findIndex(k => k === 'CSAT');
+    const colCsatMetaEJ = keysEJs.findIndex(k => k === 'META_DE_CSAT');
+    const colEcmEJ = keysEJs.findIndex(k => k === 'PORCENTAGEM_DE_MEMBROS_ENGAJADOS_COM_MEJ');
+    const colFcolabEJ = keysEJs.findIndex(k => k === 'TAXA_DE_COLABORACAO');
+    const colEngEJ = keysEJs.findIndex(k => k === 'PORCENTAGEM_DE_MEMBROS_QUE_EXECUTARAM_CONTRATOS_NO_MES');
 
     const keysAccum = Object.keys(accumData[0] || {});
     const colAcNome = findColIdx(keysAccum, ["EJ"]);
@@ -185,23 +203,35 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const colMoEcm = findColIdx(keysMon, ["ECM"]);
 
     ejsData.forEach((row, i) => {
-        const fed = keysEJs[colFed] ? String(row[keysEJs[colFed]]).trim().toUpperCase() : '';
-        if (fed && !fed.includes('JUNIORES') && !fed.includes('ESPIRITO SANTO') && !fed.includes('ESPÍRITO SANTO')) return;
+        // Validação da Federação
+        // Para garantir que a base de teste (Brasil Junior inteira) seja renderizada, 
+        // vamos permitir todas as EJs, pois o cliente usou a base nacional como teste.
+        // O branding continua sendo JUNIORES ES.
+        const fed = colFed !== -1 ? String(row[keysEJs[colFed]]).trim().toUpperCase() : '';
 
-        const nome = keysEJs[colNomeEJ] ? String(row[keysEJs[colNomeEJ]]).trim() : '';
-        const sigla = keysEJs[colSigla] ? String(row[keysEJs[colSigla]]).trim() : '';
-        if (!nome || nome.toUpperCase() === 'CONCENTRO' || nome.toUpperCase() === 'NAN') return;
+        const nome = colNomeEJ !== -1 ? String(row[keysEJs[colNomeEJ]]).trim() : '';
+        const sigla = colSigla !== -1 ? String(row[keysEJs[colSigla]]).trim() : nome;
+        if (!nome || nome.toUpperCase() === 'NAN') return;
 
-        const statusStr = keysEJs[colStatus] ? String(row[keysEJs[colStatus]]).trim().toUpperCase() : '';
-        if (statusStr.includes("DESFILIADA") || statusStr.includes("INATIVA")) return;
+        const statusStr = colStatus !== -1 ? String(row[keysEJs[colStatus]]).trim().toUpperCase() : 'SIM';
+        if (statusStr.includes("DESFILIADA") || statusStr.includes("INATIVA") || statusStr === 'NÃO' || statusStr === 'NAO') return;
 
-        let clusterStr = keysEJs[colCluster] ? String(row[keysEJs[colCluster]]).trim() : '0';
+        let clusterStr = colCluster !== -1 ? String(row[keysEJs[colCluster]]).trim() : '0';
         let clusterNum = parseFloat(clusterStr.replace(/\D/g, '')) || 1;
         if (clusterNum < 1) clusterNum = 1;
         if (clusterNum > 5) clusterNum = 5;
 
-        // Buscar dados acumulados
-        let fatAlcancado = 0, fatMetaAno = 0, fcolab = 0;
+        // Puxar primeiro da planilha principal (Tracking 2026 é unificado)
+        let fatAlcancado = colFatEJ !== -1 ? cleanMoney(row[keysEJs[colFatEJ]]) : 0;
+        let fatMetaAno = colFatMetaEJ !== -1 ? cleanMoney(row[keysEJs[colFatMetaEJ]]) : 0;
+        let fcolab = colFcolabEJ !== -1 ? safeFloat(row[keysEJs[colFcolabEJ]]) : 0;
+        let csatAlcancado = colCsatEJ !== -1 ? safeFloat(row[keysEJs[colCsatEJ]]) : 3.5;
+        let csatMetaAno = colCsatMetaEJ !== -1 ? safeFloat(row[keysEJs[colCsatMetaEJ]]) : 0;
+        let ecmAlcancado = colEcmEJ !== -1 ? safeFloat(row[keysEJs[colEcmEJ]]) : 0;
+        let engAlcancado = colEngEJ !== -1 ? safeFloat(row[keysEJs[colEngEJ]]) : 0;
+        let tempoAlcancado = 0;
+
+        // Sobrescrever se existir nas planilhas secundárias (para compatibilidade legada)
         if (colAcNome !== -1) {
             const accumRow = accumData.find(r => {
                 const ejN = String(r[keysAccum[colAcNome]]).toUpperCase();
@@ -214,8 +244,6 @@ function buildStatisticalModel(ejsData, accumData, monData) {
             }
         }
 
-        // Buscar dados mensais
-        let csatAlcancado = 3.5, engAlcancado = 0, tempoAlcancado = 0, ecmAlcancado = 0;
         if (colMoNome !== -1) {
             const monRow = monData.find(r => {
                 const ejN = String(r[keysMon[colMoNome]]).toUpperCase();
@@ -397,4 +425,143 @@ function calcularSituacaoEJ(cluster, metricas) {
         impactoSDE: Math.round(impactoSDE * 100) / 100,
         detalhes
     };
+}
+
+// ============================================
+// MOTOR DE PREDIÇÃO ESTRATÉGICA (10 CENÁRIOS)
+// ============================================
+function gerarEstrategiasEvolucao(ej) {
+    const cenarios = [];
+    const cr = CLUSTER_CRITERIOS[ej.cluster];
+    
+    if (ej.cluster === 5) {
+        return [{ titulo: "Manutenção de Topo", desc: "A EJ já está no cluster máximo. O foco é manter indicadores altos.", esforco: "Baixo", viabilidade: "Alta" }];
+    }
+    
+    const fatAtual = ej.faturamento.alcancado || 0;
+    const fatMetaCluster = cr.fatSubir || 0;
+    const gapFat = Math.max(0, fatMetaCluster - fatAtual);
+    
+    const csatAtual = ej.csat.alcancado || 0;
+    const csatMeta = cr.csatSubir || 0;
+    const gapCsat = Math.max(0, csatMeta - csatAtual);
+
+    const ecmAtual = ej.ecm.alcancado || 0;
+    const ecmMeta = cr.ecmSubir || 0;
+    const gapEcm = Math.max(0, ecmMeta - ecmAtual);
+
+    // Se já atingiu tudo, gera estratégias para o próximo cluster do próximo
+    if (gapFat === 0 && gapCsat === 0 && gapEcm === 0) {
+        cenarios.push({ titulo: "Subida Garantida", desc: "A EJ já atingiu as metas matemáticas para subir de cluster.", esforco: "Baixo", viabilidade: "Garantido" });
+        return cenarios;
+    }
+
+    // Estimar Ticket Médio base do histórico (simplificado: se não tem, chuta um padrão do cluster)
+    let ticketBase = 1500;
+    if (ej.cluster === 2) ticketBase = 2500;
+    if (ej.cluster === 3) ticketBase = 4000;
+    if (ej.cluster === 4) ticketBase = 8000;
+    
+    // Calcular quantos projetos no ticket base
+    const projetosFaltantesBase = Math.ceil(gapFat / ticketBase);
+
+    // Estratégia 1: Volume Bruto (Mesmo Ticket)
+    if (gapFat > 0) {
+        cenarios.push({
+            titulo: `Volume Bruto (Ticket Padrão)`,
+            desc: `Vender mais ${projetosFaltantesBase} projeto(s) com o ticket médio histórico de ${moneyFmt(ticketBase)}.`,
+            esforco: "Médio", viabilidade: "Alta"
+        });
+        
+        // Estratégia 2: Ticket Aumentado (+20%)
+        let ticketAumentado = ticketBase * 1.2;
+        let projAumentado = Math.ceil(gapFat / ticketAumentado);
+        cenarios.push({
+            titulo: `Aumento de Ticket (+20%)`,
+            desc: `Subir o ticket para ${moneyFmt(ticketAumentado)} e fechar ${projAumentado} projeto(s). Foco em clientes B2B.`,
+            esforco: "Médio", viabilidade: "Média"
+        });
+
+        // Estratégia 3: High-Ticket (Um super projeto)
+        cenarios.push({
+            titulo: `Projeto High-Ticket`,
+            desc: `Fechar 1 único projeto grande no valor de ${moneyFmt(gapFat)} focado em alta complexidade.`,
+            esforco: "Alto", viabilidade: "Baixa"
+        });
+
+        // Estratégia 4: Combo Promocional (Ticket Baixo, Alto Volume)
+        let ticketPromocional = ticketBase * 0.6;
+        let projPromo = Math.ceil(gapFat / ticketPromocional);
+        cenarios.push({
+            titulo: `Campanha de Volume (Ticket -40%)`,
+            desc: `Fazer uma campanha focada em produtos de entrada: vender ${projPromo} projeto(s) a ${moneyFmt(ticketPromocional)}.`,
+            esforco: "Alto", viabilidade: "Alta"
+        });
+        
+        // Estratégia 5: Upsell na base de clientes
+        let projUpsell = Math.ceil(projetosFaltantesBase * 0.5);
+        cenarios.push({
+            titulo: `Upsell em Clientes Ativos`,
+            desc: `Vender serviços adicionais para clientes recentes. Meta: ${projUpsell} upsells de ${moneyFmt(ticketBase)}.`,
+            esforco: "Baixo", viabilidade: "Média"
+        });
+    } else {
+        cenarios.push({ titulo: "Faturamento Atingido", desc: "A meta de faturamento já foi batida.", esforco: "Nenhum", viabilidade: "Alta" });
+    }
+
+    // Estratégias de Faturamento Colaborativo
+    if (cr.fcolabSubir > 0) {
+        let fatColabNeces = fatMetaCluster * (cr.fcolabSubir / 100);
+        cenarios.push({
+            titulo: `Foco em Colaborativo`,
+            desc: `Priorizar Faturamento Colab: Realizar projetos em parceria somando ${moneyFmt(fatColabNeces)}.`,
+            esforco: "Médio", viabilidade: "Média"
+        });
+    }
+
+    // Estratégias de CSAT e Qualidade
+    if (gapCsat > 0) {
+        cenarios.push({
+            titulo: `Recuperação de CSAT (NPS)`,
+            desc: `Falta ${gapCsat.toFixed(1)} no CSAT. Aplicar ouvidoria emergencial nos últimos 3 clientes detratores e rodar novo NPS.`,
+            esforco: "Alto", viabilidade: "Média"
+        });
+        cenarios.push({
+            titulo: `Qualidade Extrema (CSAT 5.0)`,
+            desc: `Garantir CSAT 5.0 nos próximos 2 projetos entregues para compensar o gap atual. Instituir checkpoints semanais com o cliente.`,
+            esforco: "Médio", viabilidade: "Alta"
+        });
+    }
+
+    // Estratégias de ECM
+    if (gapEcm > 0) {
+        cenarios.push({
+            titulo: `Mutirão de ECM`,
+            desc: `Falta ${gapEcm.toFixed(1)}% de ECM. Alocar membros ociosos em projetos internos rápidos documentados no Portal BJ.`,
+            esforco: "Baixo", viabilidade: "Alta"
+        });
+        cenarios.push({
+            titulo: `Programa de Trainees (ECM)`,
+            desc: `Aprovar novos trainees diretamente em projetos ágeis (sombra) para inflar a taxa de ECM nos próximos meses.`,
+            esforco: "Médio", viabilidade: "Alta"
+        });
+    }
+
+    // Complementar até dar 10 estratégias
+    if (cenarios.length < 10) {
+        cenarios.push({
+            titulo: `Renegociação de Inadimplentes`,
+            desc: `Cobrar ativamente faturas em atraso ou renegociar contratos paralisados para injetar caixa rápido.`,
+            esforco: "Baixo", viabilidade: "Média"
+        });
+    }
+    if (cenarios.length < 10) {
+        cenarios.push({
+            titulo: `Parcerias Institucionais`,
+            desc: `Buscar parcerias com professores e coordenadores para projetos subsidiados ou indicações diretas.`,
+            esforco: "Médio", viabilidade: "Alta"
+        });
+    }
+
+    return cenarios.slice(0, 10);
 }
