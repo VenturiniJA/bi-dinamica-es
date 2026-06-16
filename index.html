@@ -12,7 +12,7 @@
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=7">
+    <link rel="stylesheet" href="styles.css?v=8">
     <style>
         .loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -478,12 +478,12 @@
                             ritmo de acompanhamento para cada EJ priorizada.</p>
 
                         <div style="display:flex;gap:var(--space-md);margin-bottom:var(--space-lg);align-items:center;">
-                            <button class="btn-primary" onclick="generateAllActionPlans()">⚡ Gerar Planos para Apostas
-                                de Alto Retorno</button>
-                            <button class="btn-ghost" onclick="generateAllActionPlans('all')">📋 Gerar para Todas as
-                                Apostas</button>
-                            <button class="btn-ghost" onclick="printActionPlans()" style="margin-left:auto;">🖨️
-                                Imprimir</button>
+                            <select id="ej-plan-select" onchange="generateSingleActionPlan(this.value)" style="padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-body); min-width: 250px; outline: none; cursor: pointer;">
+                                <option value="">Selecione uma EJ Específica...</option>
+                            </select>
+                            <button class="btn-primary" onclick="generateAllActionPlans()">⚡ Gerar Planos para Apostas de Alto Retorno</button>
+                            <button class="btn-ghost" onclick="generateAllActionPlans('all')">📋 Gerar para Todas as Apostas</button>
+                            <button class="btn-ghost" onclick="printActionPlans()" style="margin-left:auto;">🖨️ Imprimir</button>
                         </div>
 
                         <div id="action-plans-container">
@@ -567,9 +567,9 @@
         </div>
     </div>
 
-    <script src="native_engine.js?v=7"></script>
-    <script src="app.js?v=7"></script>
-    <link rel="stylesheet" href="styles.css?v=7">
+    <script src="native_engine.js?v=8"></script>
+    <script src="app.js?v=8"></script>
+    <link rel="stylesheet" href="styles.css?v=8">
 </body>
 
 </html>

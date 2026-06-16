@@ -49,6 +49,7 @@ function initPlatform(dados) {
     renderDashboard(dados);
     renderSimulator(dados);
     renderApostas(dados);
+    populatePlanSelect(dados);
     document.getElementById('sidebar-search').addEventListener('input', function() {
         renderSidebar(dados, this.value);
     });
@@ -551,8 +552,23 @@ function renderApostasCards(dados) {
         html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;"><div>';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
         html += '<span style="font-size:0.92rem;font-weight:700;color:var(--text-primary);">' + ej.nome + '</span>';
-        html += '<span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span>';
-        html += '<span class="badge ' + sitClass + '">' + ej.situacao + '</span></div>';
+        
+        var nextC = ej.situacao === 'CAI' ? ej.cluster : Math.min(5, ej.cluster + 1);
+        var expectedC = ej.analisePrevista && ej.analisePrevista.novoCluster ? ej.analisePrevista.novoCluster : (ej.situacao === 'CAI' ? Math.max(1, ej.cluster - 1) : ej.cluster);
+
+        html += '<div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:12px;">';
+        if (ej.situacao === 'CAI') {
+            html += '<span style="font-size:0.75rem;color:var(--status-cai);font-weight:700;">C' + expectedC + ' (Queda)</span>';
+            html += '<span style="color:var(--text-muted);font-size:0.7rem;">➔</span>';
+            html += '<span style="font-size:0.75rem;color:var(--status-sobe);font-weight:700;">C' + nextC + ' (Se agir)</span>';
+        } else if (ej.situacao === 'PERMANECE') {
+            html += '<span style="font-size:0.75rem;color:var(--brand-blue);font-weight:700;">C' + ej.cluster + ' (Atual)</span>';
+            html += '<span style="color:var(--text-muted);font-size:0.7rem;">➔</span>';
+            html += '<span style="font-size:0.75rem;color:var(--status-sobe);font-weight:700;">C' + nextC + ' (Se agir)</span>';
+        } else {
+            html += '<span style="font-size:0.75rem;color:var(--status-sobe);font-weight:700;">C' + ej.cluster + ' (Garantido)</span>';
+        }
+        html += '</div></div>';
         html += '<span class="badge ' + cat.bc + '">' + cat.label + '</span></div>';
         html += '<div style="text-align:right;"><div style="font-size:0.65rem;color:var(--text-muted);font-weight:600;">Impacto SDE</div>';
         html += '<div style="font-family:var(--font-heading);font-size:1.2rem;font-weight:800;color:' + cat.color + ';">' + (ej.impactoSDE >= 0 ? '+' : '') + ej.impactoSDE.toFixed(2) + '</div></div></div>';
@@ -615,6 +631,55 @@ function generateAllActionPlans(scope) {
         html += '<div style="font-size:0.72rem;font-weight:700;color:var(--brand-blue);margin-bottom:4px;">Ritmo de Acompanhamento</div>';
         html += '<div style="font-size:0.75rem;color:var(--text-secondary);">' + plan.ritmo + '</div></div></div></div>';
     });
+    container.innerHTML = html;
+}
+
+function populatePlanSelect(dados) {
+    var select = document.getElementById('ej-plan-select');
+    if (!select) return;
+    
+    // Remove existing options except the first default one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+    
+    var sorted = dados.slice().sort((a, b) => a.nome.localeCompare(b.nome));
+    sorted.forEach(function(ej) {
+        var opt = document.createElement('option');
+        opt.value = ej.id;
+        opt.textContent = ej.nome + ' (C' + ej.cluster + ' - ' + ej.situacao + ')';
+        select.appendChild(opt);
+    });
+}
+
+function generateSingleActionPlan(ejId) {
+    if (!ejId) return;
+    var container = document.getElementById('action-plans-container');
+    var ej = window.allEJs.find(function(e) { return e.id === ejId; });
+    if (!ej) return;
+
+    var plan = generateActionPlan(ej);
+    var cc = CLUSTER_COLORS[ej.cluster];
+    var catCfg = { alto: { label:'Alto Retorno', color:'var(--aposta-alto)' }, potencial: { label:'Potencial', color:'var(--aposta-potencial)' }, risco: { label:'Em Risco', color:'var(--aposta-risco)' }, alerta: { label:'Alerta Vermelho', color:'var(--aposta-alerta)' } };
+    var cat = catCfg[ej.categoriaAposta] || catCfg.risco;
+    
+    var html = '<div class="action-card animate-slide-up delay-1" style="margin-bottom:var(--space-md);border-left:4px solid ' + cat.color + ';">';
+    html += '<div class="action-card-header"><div style="display:flex;align-items:center;gap:12px;">';
+    html += '<span style="font-size:1rem;font-weight:700;color:var(--text-primary);">' + ej.nome + '</span>';
+    html += '<span class="cluster-badge c' + ej.cluster + '">' + cc.name + '</span>';
+    html += '<span style="font-size:0.72rem;font-weight:700;color:' + cat.color + ';">' + cat.label + '</span></div>';
+    html += '<div style="text-align:right;"><div style="font-size:0.65rem;color:var(--text-muted);">Impacto SDE</div>';
+    html += '<div style="font-weight:800;color:' + cat.color + ';">' + (ej.impactoSDE >= 0 ? '+' : '') + ej.impactoSDE.toFixed(2) + '</div></div></div>';
+    html += '<div class="action-card-body">';
+    plan.steps.forEach(function(step) {
+        html += '<div class="action-step"><div class="action-step-icon" style="background:' + step.iconBg + ';color:' + step.iconColor + ';">' + step.icon + '</div>';
+        html += '<div style="flex:1;"><div style="font-size:0.78rem;font-weight:700;color:var(--text-accent);margin-bottom:4px;">' + step.title + '</div>';
+        html += '<div style="font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">' + step.description + '</div></div></div>';
+    });
+    html += '<div style="margin-top:var(--space-md);padding:var(--space-md);background:rgba(59,130,246,0.05);border-radius:var(--radius-md);border:1px solid rgba(59,130,246,0.1);">';
+    html += '<div style="font-size:0.72rem;font-weight:700;color:var(--brand-blue);margin-bottom:4px;">Ritmo de Acompanhamento</div>';
+    html += '<div style="font-size:0.75rem;color:var(--text-secondary);">' + plan.ritmo + '</div></div></div></div>';
+    
     container.innerHTML = html;
 }
 
