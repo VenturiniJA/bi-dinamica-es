@@ -148,8 +148,50 @@ function highlightEJ(id) {
         row.style.background = 'rgba(59,130,246,0.15)';
         setTimeout(function() { row.style.background = ''; }, 2000);
     }
+    
+    // Atualizar a nova view do Farol
+    renderFarolTable();
+
     openPredictionModal(id);
 }
+
+function renderFarolTable() {
+    var tbody = document.getElementById('farol-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    // Sort EJs by Predicted Situation descending (SOBE, PERMANECE, CAI), then by name
+    var sorted = [...window.allEJs].sort((a, b) => {
+        var rank = {'SOBE': 3, 'PERMANECE': 2, 'CAI': 1};
+        var rankA = rank[a.analisePrevista.situacao] || 0;
+        var rankB = rank[b.analisePrevista.situacao] || 0;
+        if (rankA !== rankB) return rankB - rankA;
+        return a.nome.localeCompare(b.nome);
+    });
+
+    sorted.forEach(ej => {
+        var indiceMinimoParaSubir = window.CLUSTER_CRITERIOS[ej.cluster]?.indiceSubir || 0;
+        var farolHtml = '';
+        var sitAtual = ej.analiseAtual.situacao;
+        var sitPrevista = ej.analisePrevista.situacao;
+
+        var tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => openPredictionModal(ej.id);
+        
+        tr.innerHTML = \`
+            <td>\${ej.nome}</td>
+            <td style="text-align:center;"><span class="badge badge-c\${ej.cluster}">C\${ej.cluster}</span></td>
+            <td style="text-align:right; font-weight:600; color:var(--text-primary);">\${moneyFmt(ej.analisePrevista.indiceCalculado).replace('R$ ','')}</td>
+            <td style="text-align:right; font-weight:500; color:var(--text-muted);">\${moneyFmt(ej.analiseAtual.indiceCalculado).replace('R$ ','')}</td>
+            <td style="text-align:right; font-weight:500; color:var(--text-secondary);">\${moneyFmt(indiceMinimoParaSubir).replace('R$ ','')}</td>
+            <td style="text-align:center;"><span class="badge badge-\${sitAtual.toLowerCase()}">\${sitAtual}</span></td>
+            <td style="text-align:center;"><span class="badge badge-\${sitPrevista.toLowerCase()}">\${sitPrevista}</span></td>
+        \`;
+        tbody.appendChild(tr);
+    });
+}
+
 
 function openPredictionModal(id) {
     var ej = window.allEJs.find(e => e.id === id);
@@ -158,140 +200,72 @@ function openPredictionModal(id) {
     document.getElementById('predicao-modal-title').textContent = 'Calculadora de Cluster - ' + ej.nome;
     document.getElementById('predicao-modal-subtitle').textContent = 'Simule e entenda os indicadores para evolução';
     
-    // Extraindo dados para a calculadora
-    var fat = ej.faturamento ? ej.faturamento.projetado || ej.faturamento.alcancado || 0 : 0;
-    var fatColab = ej.fcolab || 0;
-    var csat = ej.csat ? ej.csat.alcancado || 0 : 0;
-    var engajamento = ej.engajamento ? ej.engajamento.alcancado || 0 : 0;
+    // Extraindo dados para a calculadora (Atual)
+    var fatAtual = ej.faturamento.alcancado || 0;
+    var fatColabAtual = ej.fcolab.alcancado || 0;
+    var csatAtual = ej.csat.alcancado || 0;
+    var engAtual = ej.engajamento.alcancado || 0;
+    var percColabAtual = fatAtual > 0 ? (fatColabAtual / fatAtual) : 0;
     
-    var percColab = fat > 0 ? (fatColab / fat) : 0;
-    var engPerc = engajamento / 100;
-    var indiceCalculado = fat * csat * (1 + engPerc) * (1 + percColab) * 100;
+    // Extraindo dados para a calculadora (Previsto / Meta)
+    var fatMeta = ej.faturamento.metaAno || 0;
+    var fatColabMeta = ej.fcolab.meta || 0;
+    var csatMeta = ej.csat.meta || 0;
+    var engMeta = ej.ecm.meta || 0;
+    var percColabMeta = fatMeta > 0 ? (fatColabMeta / fatMeta) : 0;
     
-    var html = `
-    <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
+    function buildCard(title, fat, fatColab, percColab, csat, eng, analise) {
+        var situacao = analise.situacao;
+        var clusterFinal = situacao === 'SOBE' ? ej.cluster+1 : situacao === 'CAI' ? Math.max(1, ej.cluster-1) : ej.cluster;
+        var nomeCluster = ['INCUBADA', 'INCUBADA', 'OPERAÇÃO', 'TRAÇÃO', 'TRAÇÃO', 'ALTO CRESCIMENTO'][clusterFinal] || 'CLUSTER';
+        var borderColor = situacao === 'SOBE' ? 'var(--status-sobe)' : situacao === 'CAI' ? 'var(--status-cai)' : 'var(--brand-blue)';
         
-        <!-- Lado Esquerdo: Inputs da Calculadora -->
-        <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px;">
-            <h3 style="font-size:0.9rem;color:var(--text-accent);margin-bottom:8px;">Informações</h3>
-            
-            <div>
-                <label style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Cluster atual</label>
-                <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;font-weight:700;">${ej.cluster}</div>
-            </div>
-            
-            <div>
-                <label style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Faturamento Projetado/Alcançado (R$)</label>
-                <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;font-weight:700;color:var(--status-sobe);">${moneyFmt(fat)}</div>
-            </div>
-            
-            <div>
-                <label style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Faturamento Colaborativo (R$)</label>
-                <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;font-weight:700;">${moneyFmt(fatColab)}</div>
-            </div>
-            
-            <div>
-                <label style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">CSAT</label>
-                <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;font-weight:700;">${csat.toFixed(2)}</div>
-            </div>
-            
-            <div>
-                <label style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Engajamento com o MEJ (%)</label>
-                <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;font-weight:700;">${engajamento.toFixed(2)}%</div>
-            </div>
-            
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-primary);">
-                    <input type="checkbox" checked disabled> Está de acordo com Selo EJ
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text-primary);">
-                    <input type="checkbox" checked disabled> Atingiu o indicador de Projeto de Impacto
-                </label>
-            </div>
-        </div>
-        
-        <!-- Lado Direito: Resultados -->
-        <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:16px;">
-            
-            <!-- Card Azul Portal BJ -->
-            <div style="background:var(--brand-blue);border-radius:var(--radius-lg);padding:32px;text-align:center;color:#fff;">
-                <p style="font-size:0.85rem;font-weight:600;margin-bottom:8px;opacity:0.9;">O Cluster da EJ é:</p>
-                <div style="font-size:4rem;font-weight:900;line-height:1;margin-bottom:4px;">${ej.situacao === 'SOBE' ? ej.cluster+1 : ej.situacao === 'CAI' ? Math.max(1, ej.cluster-1) : ej.cluster}</div>
-                <div style="font-size:1.1rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:32px;">
-                    ${['INCUBADA', 'INCUBADA', 'OPERAÇÃO', 'TRAÇÃO', 'TRAÇÃO', 'ALTO CRESCIMENTO'][ej.situacao === 'SOBE' ? ej.cluster+1 : ej.situacao === 'CAI' ? Math.max(1, ej.cluster-1) : ej.cluster] || 'CLUSTER'}
+        return \`
+            <div style="flex:1;min-width:300px;background:rgba(255,255,255,0.02);border-radius:var(--radius-lg);padding:24px;border-top:4px solid \${borderColor};display:flex;flex-direction:column;gap:16px;">
+                <h3 style="font-size:1.1rem;font-weight:800;text-align:center;color:var(--text-primary);margin-bottom:8px;">\${title}</h3>
+                
+                <div style="text-align:center;margin-bottom:16px;">
+                    <p style="font-size:0.75rem;font-weight:600;opacity:0.8;">O Cluster da EJ é:</p>
+                    <div style="font-size:3.5rem;font-weight:900;line-height:1;margin:4px 0;color:\${borderColor};">\${clusterFinal}</div>
+                    <div style="font-size:0.9rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;">\${nomeCluster}</div>
+                    <div style="margin-top:8px;"><span class="badge badge-\${situacao.toLowerCase()}">\${situacao}</span></div>
                 </div>
                 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;background:rgba(0,0,0,0.15);border-radius:8px;padding:16px;">
-                    <div>
-                        <div style="font-size:0.7rem;opacity:0.8;font-weight:600;margin-bottom:4px;">CSAT</div>
-                        <div style="font-size:1.1rem;font-weight:800;">${csat.toFixed(2)}</div>
+                <div style="display:flex;flex-direction:column;gap:8px;background:rgba(0,0,0,0.15);padding:16px;border-radius:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Faturamento</span>
+                        <span style="font-size:0.85rem;font-weight:700;">\${moneyFmt(fat)}</span>
                     </div>
-                    <div>
-                        <div style="font-size:0.7rem;opacity:0.8;font-weight:600;margin-bottom:4px;">Engajamento MEJ (%)</div>
-                        <div style="font-size:1.1rem;font-weight:800;">${engajamento.toFixed(2)}%</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);">CSAT</span>
+                        <span style="font-size:0.85rem;font-weight:700;">\${csat.toFixed(2)}</span>
                     </div>
-                    <div>
-                        <div style="font-size:0.7rem;opacity:0.8;font-weight:600;margin-bottom:4px;">% Faturamento Colab.</div>
-                        <div style="font-size:1.1rem;font-weight:800;">${(percColab*100).toFixed(2)}%</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Engajamento</span>
+                        <span style="font-size:0.85rem;font-weight:700;">\${eng.toFixed(2)}%</span>
                     </div>
-                    <div>
-                        <div style="font-size:0.7rem;opacity:0.8;font-weight:600;margin-bottom:4px;color:var(--brand-pink);">Índice Calculado</div>
-                        <div style="font-size:1.1rem;font-weight:800;">${moneyFmt(indiceCalculado).replace('R$ ','')}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Fat. Colaborativo</span>
+                        <span style="font-size:0.85rem;font-weight:700;">\${moneyFmt(fatColab)}</span>
+                    </div>
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.75rem;color:var(--brand-pink);font-weight:700;">Índice</span>
+                        <span style="font-size:1.1rem;font-weight:900;">\${moneyFmt(analise.indiceCalculado).replace('R$ ','')}</span>
                     </div>
                 </div>
+                
+                <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:auto;padding-top:16px;">\${analise.detalhes}</p>
+                \${analise.trava !== 'Nenhuma' ? \`<p style="font-size:0.8rem;color:var(--status-cai);text-align:center;font-weight:600;">Trava Crítica: \${analise.trava}</p>\` : ''}
             </div>
-            
-        </div>
+        \`;
+    }
+
+    var html = \`
+    <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
+        \${buildCard('Cenário Atual', fatAtual, fatColabAtual, percColabAtual, csatAtual, engAtual, ej.analiseAtual)}
+        \${buildCard('Expectativa para Dezembro', fatMeta, fatColabMeta, percColabMeta, csatMeta, engMeta, ej.analisePrevista)}
     </div>
-    
-    <!-- Detalhamento do Cálculo -->
-    <div style="margin-top:24px;border-top:1px solid var(--border-medium);padding-top:24px;">
-        <h3 style="font-size:1rem;color:var(--text-accent);margin-bottom:16px;">Detalhamento do Cálculo</h3>
-        
-        <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:16px;background:rgba(255,255,255,0.03);padding:24px;border-radius:var(--radius-md);">
-            <div style="text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">Faturamento</div>
-                <div style="font-weight:700;">${moneyFmt(fat)}</div>
-            </div>
-            <div style="color:var(--brand-blue);font-weight:800;">×</div>
-            <div style="text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">CSAT</div>
-                <div style="font-weight:700;">${csat.toFixed(2)}</div>
-            </div>
-            <div style="color:var(--brand-blue);font-weight:800;">×</div>
-            <div style="text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">1 + Eng. MEJ (%)</div>
-                <div style="font-weight:700;">${(1+engPerc).toFixed(2)}</div>
-            </div>
-            <div style="color:var(--brand-blue);font-weight:800;">×</div>
-            <div style="text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">1 + % Fat. Colab.</div>
-                <div style="font-weight:700;">${(1+percColab).toFixed(2)}</div>
-            </div>
-            <div style="color:var(--brand-blue);font-weight:800;">×</div>
-            <div style="text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">Constante</div>
-                <div style="font-weight:700;">100</div>
-            </div>
-            <div style="color:var(--brand-blue);font-weight:800;">=</div>
-            <div style="text-align:center;background:var(--brand-blue);padding:8px 16px;border-radius:4px;color:#fff;">
-                <div style="font-size:0.7rem;opacity:0.9;margin-bottom:2px;">Índice do Cluster</div>
-                <div style="font-weight:800;font-size:1.1rem;">${moneyFmt(indiceCalculado).replace('R$ ','')}</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Diagnóstico e Evolução -->
-    <div style="margin-top:24px;border-top:1px solid var(--border-medium);padding-top:24px;display:flex;gap:24px;">
-        <div style="flex:1;">
-            <h3 style="font-size:0.9rem;color:var(--text-accent);margin-bottom:12px;">Diagnóstico e Próximo Passo</h3>
-            <div style="padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:4px solid ${ej.situacao === 'SOBE' ? 'var(--status-sobe)' : ej.situacao === 'CAI' ? 'var(--status-cai)' : 'var(--brand-blue)'}">
-                <p style="font-weight:700;color:var(--text-primary);margin-bottom:8px;">Situação: <span class="badge badge-${ej.situacao.toLowerCase()}">${ej.situacao}</span></p>
-                <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;">${ej.detalhes}</p>
-                ${ej.trava !== 'Nenhuma' ? `<p style="font-size:0.85rem;color:var(--status-cai);line-height:1.5;margin-top:8px;font-weight:600;">Trava Crítica: ${ej.trava}</p>` : ''}
-            </div>
-        </div>
-    </div>
+
     
     <!-- Estratégias Funcionais -->
     <div style="margin-top:24px;border-top:1px solid var(--border-medium);padding-top:24px;">

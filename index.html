@@ -118,6 +118,10 @@
                         </svg>
                         Dashboard SDE
                     </div>
+                    <div class="nav-tab" data-view="farol" onclick="switchView('farol')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Farol de Cluster
+                    </div>
                     <div class="nav-tab" data-view="simulador" onclick="switchView('simulador')">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
@@ -241,6 +245,36 @@
                                         </tr>
                                     </thead>
                                     <tbody id="dash-table-body">
+                                        <!-- Rows injected -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== VIEW: FAROL DE CLUSTER ========== -->
+                    <div class="view-panel" id="view-farol">
+                        <h2 class="section-title">Farol de Cluster</h2>
+                        <p class="section-subtitle">Acompanhamento Duplo: Expectativa para Dezembro (Previsto) vs Situação no mês atual (Atual).</p>
+
+                        <div class="glass-card" style="padding:0;overflow:hidden;margin-top:24px;">
+                            <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:0.82rem;font-weight:700;color:var(--text-accent);">Métricas de Crescimento</span>
+                            </div>
+                            <div style="max-height:600px;overflow-y:auto;" class="custom-scrollbar">
+                                <table class="data-table" id="farol-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa Júnior</th>
+                                            <th style="text-align:center;">Cluster Atual</th>
+                                            <th style="text-align:right;">Índice Previsto</th>
+                                            <th style="text-align:right;">Índice Atual</th>
+                                            <th style="text-align:right;">Índice para Subir</th>
+                                            <th style="text-align:center;">Situação Atual</th>
+                                            <th style="text-align:center;">Farol (Previsão)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="farol-table-body">
                                         <!-- Rows injected -->
                                     </tbody>
                                 </table>
@@ -530,8 +564,8 @@
         </div>
     </div>
 
-    <script src="native_engine.js?v=3"></script>
-    <script src="app.js?v=3"></script>
+    <script src="native_engine.js?v=4"></script>
+    <script src="app.js?v=4"></script>
 </body>
 
 </html>

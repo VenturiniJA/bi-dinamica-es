@@ -186,7 +186,9 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const colCsatEJ = keysEJs.findIndex(k => k === 'CSAT');
     const colCsatMetaEJ = keysEJs.findIndex(k => k === 'META_DE_CSAT');
     const colEcmEJ = keysEJs.findIndex(k => k === 'PORCENTAGEM_DE_MEMBROS_ENGAJADOS_COM_MEJ');
+    const colEcmMetaEJ = keysEJs.findIndex(k => k === 'META_DE_MEJ_ENGAGED_MEMBERS');
     const colFcolabEJ = keysEJs.findIndex(k => k === 'TAXA_DE_COLABORACAO');
+    const colFcolabMetaEJ = keysEJs.findIndex(k => k === 'META_DE_COLLABORATIVE_RATE');
     const colEngEJ = keysEJs.findIndex(k => k === 'PORCENTAGEM_DE_MEMBROS_QUE_EXECUTARAM_CONTRATOS_NO_MES');
 
     const keysAccum = Object.keys(accumData[0] || {});
@@ -225,9 +227,11 @@ function buildStatisticalModel(ejsData, accumData, monData) {
         let fatAlcancado = colFatEJ !== -1 ? cleanMoney(row[keysEJs[colFatEJ]]) : 0;
         let fatMetaAno = colFatMetaEJ !== -1 ? cleanMoney(row[keysEJs[colFatMetaEJ]]) : 0;
         let fcolab = colFcolabEJ !== -1 ? safeFloat(row[keysEJs[colFcolabEJ]]) : 0;
-        let csatAlcancado = colCsatEJ !== -1 ? safeFloat(row[keysEJs[colCsatEJ]]) : 3.5;
-        let csatMetaAno = colCsatMetaEJ !== -1 ? safeFloat(row[keysEJs[colCsatMetaEJ]]) : 0;
+        let fcolabMeta = colFcolabMetaEJ !== -1 ? safeFloat(row[keysEJs[colFcolabMetaEJ]]) : 0;
+        let csatAlcancado = colCsatEJ !== -1 ? safeFloat(row[keysEJs[colCsatEJ]]) : 0;
+        let csatMetaAno = colCsatMetaEJ !== -1 ? safeFloat(row[keysEJs[colCsatMetaEJ]]) : 3.5;
         let ecmAlcancado = colEcmEJ !== -1 ? safeFloat(row[keysEJs[colEcmEJ]]) : 0;
+        let ecmMeta = colEcmMetaEJ !== -1 ? safeFloat(row[keysEJs[colEcmMetaEJ]]) : 0;
         let engAlcancado = colEngEJ !== -1 ? safeFloat(row[keysEJs[colEngEJ]]) : 0;
         let tempoAlcancado = 0;
 
@@ -257,21 +261,31 @@ function buildStatisticalModel(ejsData, accumData, monData) {
             }
         }
 
-        if (csatAlcancado === 0) csatAlcancado = 3.5;
-        if (csatAlcancado > 5) csatAlcancado = (csatAlcancado / 100) * 5;
+        // Se CSAT atual não existir, simulamos com a meta ou 3.5 para não zerar o índice
+        let csatCalcAtual = csatAlcancado > 0 ? csatAlcancado : csatMetaAno;
+        if (csatCalcAtual > 5) csatCalcAtual = (csatCalcAtual / 100) * 5;
+        
+        let csatCalcMeta = csatMetaAno > 0 ? csatMetaAno : 3.5;
+        if (csatCalcMeta > 5) csatCalcMeta = (csatCalcMeta / 100) * 5;
 
-        // Projeção pro-rata
-        let fatProjetado = prorataRatio > 0 ? fatAlcancado / prorataRatio : fatAlcancado;
-
-        // Calcular situação e proximidade
-        const analise = calcularSituacaoEJ(clusterNum, {
+        // Calcular situação ATUAL
+        const analiseAtual = calcularSituacaoEJ(clusterNum, {
             faturamento: fatAlcancado,
-            fatProjetado: fatProjetado,
-            fatMeta: fatMetaAno,
-            csat: csatAlcancado,
+            csat: csatCalcAtual,
             ecm: ecmAlcancado,
             fcolab: fcolab,
             engajamento: engAlcancado
+        });
+
+        // Calcular situação PREVISTA (Global/Dezembro) com as METAS
+        // A planilha "Farol de Cluster" usa o ECM Meta para engajamento? 
+        // Vamos usar as Metas globais.
+        const analisePrevista = calcularSituacaoEJ(clusterNum, {
+            faturamento: fatMetaAno,
+            csat: csatCalcMeta,
+            ecm: ecmMeta,
+            fcolab: fcolabMeta,
+            engajamento: ecmMeta // Assumindo ECM Meta como Engajamento no Previsto
         });
 
         ejs.push({
@@ -279,20 +293,25 @@ function buildStatisticalModel(ejsData, accumData, monData) {
             nome: sigla || nome,
             nomeCompleto: nome,
             cluster: clusterNum,
-            faturamento: { metaAno: fatMetaAno, alcancado: fatAlcancado, projetado: fatProjetado },
-            csat: { meta: CLUSTER_CRITERIOS[clusterNum]?.csatSubir || 3.5, alcancado: csatAlcancado },
-            ecm: { alcancado: ecmAlcancado },
-            fcolab: fcolab,
-            engajamento: { meta: 75, alcancado: engAlcancado },
-            tempo: { meta: 50, alcancado: tempoAlcancado },
-            situacao: analise.situacao,
-            situacaoOriginal: analise.situacao,
-            proximidade: analise.proximidade,
-            trava: analise.trava,
-            travas: analise.travas,
-            categoriaAposta: analise.categoriaAposta,
-            impactoSDE: analise.impactoSDE,
-            detalhes: analise.detalhes
+            faturamento: { metaAno: fatMetaAno, alcancado: fatAlcancado },
+            csat: { meta: csatCalcMeta, alcancado: csatAlcancado },
+            ecm: { meta: ecmMeta, alcancado: ecmAlcancado },
+            fcolab: { meta: fcolabMeta, alcancado: fcolab },
+            engajamento: { alcancado: engAlcancado },
+            // Status Unificado (Atual) para compatibilidade do Dashboard Principal
+            situacao: analiseAtual.situacao,
+            proximidade: analiseAtual.proximidade,
+            trava: analiseAtual.trava,
+            travas: analiseAtual.travas,
+            categoriaAposta: analiseAtual.categoriaAposta,
+            impactoSDE: analiseAtual.impactoSDE,
+            detalhes: analiseAtual.detalhes,
+            indiceCalculado: analiseAtual.indiceCalculado,
+            pontosFaltantes: analiseAtual.pontosFaltantes,
+            pontosProximoCluster: analiseAtual.pontosProximoCluster,
+            // Objetos de Análise Completos
+            analiseAtual: analiseAtual,
+            analisePrevista: analisePrevista
         });
     });
 
