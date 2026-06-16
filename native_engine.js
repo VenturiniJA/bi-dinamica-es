@@ -176,7 +176,7 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     // Busca colunas da planilha principal 2026
     const colNomeEJ = keysEJs.findIndex(k => k.includes('EMPRESA_JUNIOR') || k.includes('NOME'));
     const colSigla = keysEJs.findIndex(k => k.includes('SIGLA') || k.includes('EMPRESA'));
-    const colCluster = keysEJs.findIndex(k => k.includes('CLUSTER_2026') || k.includes('CLUSTER'));
+    const colCluster = keysEJs.findIndex(k => k === 'CLUSTER_2026' || k === 'CLUSTER');
     const colStatus = keysEJs.findIndex(k => k.includes('E_FEDERADA') || k.includes('STATUS'));
     const colFed = keysEJs.findIndex(k => k.includes('FEDERACAO') || k.includes('FEDERA'));
 
@@ -203,10 +203,10 @@ function buildStatisticalModel(ejsData, accumData, monData) {
     const colMoEcm = findColIdx(keysMon, ["ECM"]);
 
     ejsData.forEach((row, i) => {
-        // Validação da Federação - Foco estrito na JUNIORES ES
+        // Validação da Federação - Foco estrito na JUNIORES
         const fed = colFed !== -1 ? String(row[keysEJs[colFed]]).trim().toUpperCase() : '';
-        if (colFed !== -1 && !fed.includes('JUNIORES') && !fed.includes('ES') && fed !== '') {
-            return; // Bloqueia tudo que não for do Espírito Santo/Juniores
+        if (colFed !== -1 && !fed.includes('JUNIORES')) {
+            return; // Bloqueia tudo que não for expressamente da JUNIORES
         }
 
         const nome = colNomeEJ !== -1 ? String(row[keysEJs[colNomeEJ]]).trim() : '';

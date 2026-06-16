@@ -292,6 +292,30 @@ function openPredictionModal(id) {
             </div>
         </div>
     </div>
+    
+    <!-- Estratégias Funcionais -->
+    <div style="margin-top:24px;border-top:1px solid var(--border-medium);padding-top:24px;">
+        <h3 style="font-size:1rem;color:var(--text-accent);margin-bottom:16px;">Plano Estratégico de Evolução</h3>
+        <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:16px;">Ações recomendadas para alavancar os indicadores e garantir o alcance do próximo cluster.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+    `;
+    
+    var estrategias = gerarEstrategiasEvolucao(ej);
+    estrategias.forEach((est, idx) => {
+        var effColor = est.esforco === 'Baixo' ? 'var(--status-sobe)' : est.esforco === 'Médio' ? 'var(--brand-blue)' : 'var(--status-cai)';
+        html += '<div class="glass-card" style="position:relative;overflow:hidden;border-top:3px solid ' + effColor + ';">';
+        html += '<div style="position:absolute;top:-10px;right:-10px;font-size:3rem;opacity:0.05;font-weight:900;">' + (idx+1) + '</div>';
+        html += '<h3 style="font-size:0.9rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">' + est.titulo + '</h3>';
+        html += '<p style="font-size:0.75rem;color:var(--text-secondary);line-height:1.4;margin-bottom:12px;">' + est.desc + '</p>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:0.65rem;font-weight:600;">';
+        html += '<span style="color:' + effColor + ';">Esforço: ' + est.esforco + '</span>';
+        html += '<span style="color:var(--text-muted);">Viabilidade: ' + est.viabilidade + '</span>';
+        html += '</div></div>';
+    });
+    
+    html += `
+        </div>
+    </div>
     `;
     
     document.getElementById('predicao-modal-content').innerHTML = html;
